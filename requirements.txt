@@ -1,0 +1,5 @@
+fastcoref
+spacytextblob
+spacy
+nltk
+argparse
