@@ -56,4 +56,30 @@ print("\nMachine:")
 for item in machine_tokens_count.most_common(10):
     print(item)
 
+def morpology_calculator(human_data, machine_data):
+    # Tries to tell if the line is human or machine when looking at the ratio kommas/points
+    human_accuracy_counter = 0
+    for line in human_data:
+        point_count = line.count('.')
+        komma_count = line.count(',')
+        if point_count > 0:
+            if komma_count / point_count > 0.93:
+                human_accuracy_counter += 1
+                # Optional: Print we think this line is human
+    human_accuracy = human_accuracy_counter / len(human_data)
+    print(f"\nHuman accuracy: {human_accuracy:.2f}")
+
+    machine_accuracy_counter = 0
+    for line in machine_data:
+        point_count = line.count('.')
+        komma_count = line.count(',')
+        if point_count > 0:
+            if komma_count / point_count < 0.93:
+                machine_accuracy_counter += 1
+                # Optional: Print we think this line is machine
+    machine_accuracy = machine_accuracy_counter / len(machine_data)
+    print(f"Machine accuracy: {machine_accuracy:.2f}")
+
+morpology_calculator(human_texts, machine_texts)
+
 # sem #
