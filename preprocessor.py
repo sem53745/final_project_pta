@@ -8,9 +8,12 @@
 # import the supporting packages
 import json
 import subprocess
+from typing import Tuple, List, NewType
+Path = NewType('Path', str)
 
 # import the necessary packages
 import spacy
+from spacy.language import Doc, Language
 from fastcoref import spacy_component
 import nltk
 
@@ -35,7 +38,7 @@ except ImportError:
         exit('Please install the textblob package')
 
 
-def get_and_parse_texts(human_data: str, machine_data: str) -> tuple:
+def get_and_parse_texts(human_data: Path, machine_data: Path) -> Tuple[List[Doc], List[Doc]]:
     ''' 
     Function to load and parse the texts from the jsonl files
     param human_data: str, the path to the jsonl file with the human data
@@ -43,39 +46,39 @@ def get_and_parse_texts(human_data: str, machine_data: str) -> tuple:
     '''
 
     # load the spacy model and add the necessary components
-    nlp = spacy.load("en_core_web_sm")
+    nlp: Language = spacy.load("en_core_web_sm")
     nlp.add_pipe('spacytextblob')
     nlp.add_pipe('fastcoref')
 
     # subfunction to load the jsonl files
-    def load_jsonl(file_path: str) -> list:
+    def load_jsonl(file_path: Path) -> List[dict]:
         with open(file_path, 'r') as file:
-            data = [json.loads(line) for line in file]
+            data: List[dict] = [json.loads(line) for line in file]
         return data
 
     # subfunction to process the data with spacy
-    def process_data(data: str) -> list:
+    def process_data(data: List[dict]) -> List[Doc]:
         # Extract text data
         data = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
         docs = list(nlp.pipe(data))
         return docs
     
     # load the data
-    human_data = load_jsonl(human_data)
-    machine_data = load_jsonl(machine_data)
+    human_data: List[dict] = load_jsonl(human_data)
+    machine_data: List[dict] = load_jsonl(machine_data)
 
     # process the data
-    human_texts = process_data(human_data)
-    machine_texts = process_data(machine_data)
+    human_docs: List[Doc] = process_data(human_data)
+    machine_docs: List[Doc] = process_data(machine_data)
 
-    return human_texts, machine_texts        
+    return human_docs, machine_docs        
 
 
 def main():
     
     # load the data
-    human_data = 'human.jsonl'
-    machine_data = 'group1.jsonl'
+    human_data: Path = 'human_sample.jsonl'
+    machine_data: Path = 'group1_sample.jsonl'
 
     # process the data
     human, machine = get_and_parse_texts(human_data, machine_data)

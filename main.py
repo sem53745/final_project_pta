@@ -11,6 +11,10 @@ from preprocessor import get_and_parse_texts
 # import the supporting packages
 import argparse
 import os
+from spacy.language import Doc
+from typing import NewType
+Path = NewType('Path', str)
+Error = NewType('Error', str)
 
 
 def create_parser():
@@ -26,7 +30,7 @@ def create_parser():
     return parser.parse_args()
 
 
-def check_files(human: str, machine: str):
+def check_files(human: Path, machine: Path) -> None | Error:
     '''
     Check if the given files exist and is of the correct type
     param human: str, the path to the human data jsonl file
@@ -42,14 +46,17 @@ def check_files(human: str, machine: str):
         raise ValueError('File must be a .jsonl file')
     
 
-def test_data(data: object):
+def test_data(data: Doc) -> None | Error:
     '''
     Function to test the functions in the main program
+    Param data: Doc, a Doc object to test the basic spacy nlp functions
     '''
 
+    # test if the data exists
     if not data:
         raise ValueError('No human data found')
     
+    # test the basic spacy token functions
     for token in data:
         if not token:
             raise ValueError('No tokens found')
