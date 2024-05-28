@@ -39,6 +39,57 @@ except ImportError:
         exit('Please install the textblob package')
 
 
+# subfunction to load the jsonl files
+def load_jsonl(file_path: Path) -> List[Dict[str, str]]:
+    with open(file_path, 'r') as file:
+        data: List[Dict[str, str]] = [json.loads(line) for line in file]
+    return data
+
+
+# subfunction to process the data with spacy
+def process_prompt_data(data: List[Dict[str, str]], nlp: Language) -> List[Dict[str, Doc | str]]:
+    # Extract text data
+    text_data: List[str] = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
+    text_by: List[str] = [entry['by'] for entry in data if 'by' in entry and entry['by'].strip()]
+    docs: List[Doc] = list(nlp.pipe(text_data))
+
+    # format the data into a list of dictionaries
+    prompt_data: List[Dict[str, Doc | str]] = [{'text': doc, 'by': by} for doc, by in zip(docs, text_by)]
+    return prompt_data
+
+
+def process_data(data: List[Dict[str, str]], nlp: Language) -> List[Doc]:
+    # Extract text data
+    text_data: List[str] = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
+    docs: List[Doc] = list(nlp.pipe(text_data))
+    return docs
+
+
+# subfunction to load the spacy model
+def load_spacy_model() -> Language:
+    # load the spacy model and add the necessary components
+    nlp: Language = spacy.load("en_core_web_sm")
+    nlp.add_pipe('spacytextblob')
+    # nlp.add_pipe('fastcoref')
+    return nlp
+
+
+def parse_promt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
+    '''
+    Function to parse the prompt data
+    param prompt_file: str, the path to the jsonl file with the prompt data
+    '''
+
+    # load the spacy model
+    nlp: Language = load_spacy_model()
+
+    # load the data
+    prompt_list: List[Dict[str, str]] = load_jsonl(prompt_file)
+    prompt_data = process_prompt_data(prompt_list, nlp)
+
+    return prompt_data
+
+
 def get_and_parse_texts(human_data: Path, machine_data: Path) -> Tuple[List[Doc], List[Doc]]:
     ''' 
     Function to load and parse the texts from the jsonl files
@@ -46,31 +97,15 @@ def get_and_parse_texts(human_data: Path, machine_data: Path) -> Tuple[List[Doc]
     param machine_data: str, the path to the jsonl file with the machine data
     '''
 
-    # load the spacy model and add the necessary components
-    nlp: Language = spacy.load("en_core_web_sm")
-    nlp.add_pipe('spacytextblob')
-    nlp.add_pipe('fastcoref')
-
-    # subfunction to load the jsonl files
-    def load_jsonl(file_path: Path) -> List[Dict[str, str]]:
-        with open(file_path, 'r') as file:
-            data: List[Dict[str, str]] = [json.loads(line) for line in file]
-        return data
-
-    # subfunction to process the data with spacy
-    def process_data(data: List[Dict[str, str]]) -> List[Doc]:
-        # Extract text data
-        text_data: List[str] = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
-        docs: List[Doc] = list(nlp.pipe(text_data))
-        return docs
+    nlp: Language = load_spacy_model()
     
     # load the data
     human_data_list: List[Dict[str, str]] = load_jsonl(human_data)
     machine_data_list: List[Dict[str, str]] = load_jsonl(machine_data)
 
     # process the data
-    human_docs: List[Doc] = process_data(human_data_list)
-    machine_docs: List[Doc] = process_data(machine_data_list)
+    human_docs: List[Doc] = process_data(human_data_list, nlp)
+    machine_docs: List[Doc] = process_data(machine_data_list, nlp)
 
     return human_docs, machine_docs        
 
@@ -87,6 +122,10 @@ def main():
     # print the length of the data as a check
     print(len(human))
     print(len(machine))
+
+    promts = parse_promt_data(Path('prompts.jsonl'))
+
+    print(len(promts))
 
 
 if __name__ == '__main__':
