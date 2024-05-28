@@ -1,0 +1,8 @@
+# Ignore everything in the "test" directories
+test/
+
+# Ignore all files with .txt extension
+*.txt
+
+# ignore the _pycache_ directory
+__pycache__/
