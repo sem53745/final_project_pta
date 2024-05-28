@@ -4,16 +4,18 @@
 
 # Jasper #
 
-# import the necessary packages
-from preprocessor import get_and_parse_texts
+# import our modules
+from preprocessor import get_and_parse_texts, Path
+from pragmatics import get_sentiment_analysis
+from morphology import morpology_results, morpology_calculator
+
 # from morphology import tokenize_and_lemmatize
 
 # import the supporting packages
 import argparse
 import os
-from spacy.language import Doc
+from spacy.tokens import Doc
 from typing import NewType
-Path = NewType('Path', str)
 Error = NewType('Error', str)
 
 
@@ -129,6 +131,16 @@ def main():
     print(len(machine))
 
     test_data(human[0])
+
+    # check the sentiment of the data
+    print('human sentiment analysis:')
+    get_sentiment_analysis(human)
+    print('machine sentiment analysis:')
+    get_sentiment_analysis(machine)
+
+    # check the morphology of the data
+    morpology_results(human, machine)
+    morpology_calculator(human, machine)
 
 
 if __name__ == '__main__':

@@ -6,14 +6,15 @@
 # Mervyn #
 
 # import preprocessor
-from preprocessor import get_and_parse_texts
+from preprocessor import get_and_parse_texts, Path
+from typing import List, Dict
+from spacy.tokens import Doc
 
 # import other necessary packages
 from collections import Counter
-import nltk
 
 
-def get_ratio_dict(data: list) -> dict:
+def get_ratio_dict(data: List[Doc]) -> Dict[str, List[float]]:
     '''
     Function that takes data from the preprocessor and returns a dictionary with tags and their ratio values
     parameter data: list of docs from the preprocessor
@@ -22,15 +23,15 @@ def get_ratio_dict(data: list) -> dict:
     '''
 
     # initialize dictionary
-    tag_dict = {}
+    tag_dict: Dict[str, List[float]] = {}
 
     # loop for every doc in the data, which corresponds to: for every text line in the json file
     for doc in data:
 
         # get the text for the length and remove newlines
-        text = doc.text
+        text: str = doc.text
         text = text.replace('\n', '')
-        pos_tags = []
+        pos_tags: List[str] = []
 
         # create a Counter dictionary of the frequency per tag
         for token in doc:
@@ -48,7 +49,7 @@ def get_ratio_dict(data: list) -> dict:
     return tag_dict
 
 
-def calculate_average_ratios(combined_ratios_dict: dict) -> dict:
+def calculate_average_ratios(combined_ratios_dict: Dict[str, List[float]]) -> Dict[str, float]:
     '''
     Function that takes all the ratios and calculates the average which is returned in a dictionary.
     parameter combined_ratios_dict: dictionary with tags and a list of all the ratios calculated per text line in the json file
@@ -57,14 +58,14 @@ def calculate_average_ratios(combined_ratios_dict: dict) -> dict:
     '''
 
     # sub function for calculating the average ratio
-    def calculate_average_ratio(values: list):
+    def calculate_average_ratio(values: List[float]) -> float:
         total_ratio = 0
         for value in values:
             total_ratio += value
-        return value / len(values)
+        return total_ratio / len(values)
 
     # initialize dictionary
-    average_ratio_dict = {}
+    average_ratio_dict: Dict[str, float] = {}
 
     # create a dictionary with every tag and their average ratio
     for key, value in combined_ratios_dict.items():
@@ -77,7 +78,7 @@ def calculate_average_ratios(combined_ratios_dict: dict) -> dict:
 def main():
 
     # get data
-    human_text, machine_text = get_and_parse_texts('human_sample.jsonl', 'group1_sample.jsonl')
+    human_text, machine_text = get_and_parse_texts(Path('human_sample.jsonl'), Path('group1_sample.jsonl'))
 
     human_ratios = get_ratio_dict(human_text)
     machine_ratios = get_ratio_dict(machine_text)
