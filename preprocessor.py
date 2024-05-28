@@ -5,7 +5,6 @@
 
 # Jasper #
 
-
 # import the supporting packages
 import json
 import subprocess
@@ -85,6 +84,8 @@ def main():
     print(len(human))
     print(len(machine))
 
-main()
+
+if __name__ == '__main__':
+    main()
 
 # Jasper #
