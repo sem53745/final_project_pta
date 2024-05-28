@@ -20,9 +20,9 @@ def create_parser():
     1. The path to the human data 
     2. The path to the machine data
     '''
-    parser = argparse.ArgumentParser(description='wordNet parsing')
-    parser.add_argument('human', type=str, help='Path to the human data jsonl file')
-    parser.add_argument('machine', type=str, help='Path to the machine data jsonl file')
+    parser = argparse.ArgumentParser(description='detection of AI generated text using NLP techniques')
+    parser.add_argument('human', metavar="human data", type=str, help='Path to the human data jsonl file')
+    parser.add_argument('machine', metavar="machine data", type=str, help='Path to the machine data jsonl file')
     return parser.parse_args()
 
 
@@ -104,7 +104,7 @@ def test_data(data: object):
         raise ValueError('No polarity found')
     if not data._.blob.subjectivity:
         raise ValueError('No subjectivity found')
-    if not data._.blob.sentiment_assessments.assessment:
+    if not data._.blob.sentiment_assessments.assessments:
         raise ValueError('No sentiment assessment found')
 
     print('All tests passed')
