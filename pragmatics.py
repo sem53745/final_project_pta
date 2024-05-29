@@ -7,6 +7,7 @@
 
 from preprocessor import get_and_parse_texts, parse_promt_data, Path
 from spacy.tokens import Doc
+from sklearn.metrics import classification_report, confusion_matrix
 from typing import List, Tuple, Dict
 
 # Jasper #
@@ -46,34 +47,21 @@ def write_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data
     '''
 
     # get the data
-    counter: int = 0
-    AI_texts: int = 0
-    correct_AI: int = 0
-    false_AI: int = 0
-    correct_human: int = 0
-    false_human: int = 0
+    true_list: List[str] = [prompt['by'] for prompt in prompts] # type: ignore
+    pred_list: List[str] = []
     for prompt in prompts:
-        if prompt['by'] == 'AI':
-            AI_texts += 1
         chance = pragmatic_predictor(prompt['text'], comparison_data) # type: ignore
         if chance > 0.0:
-            counter += 1
-            if prompt['by'] == 'AI':
-                correct_AI += 1
-            else:
-                false_AI += 1
+            pred_list.append('AI')
         else:
-            if prompt['by'] == 'Human':
-                correct_human += 1
-            else:
-                false_human += 1
+            pred_list.append('Human')
 
-    print()
-    print(f'the AI based texts were correctly identified {correct_AI} times out of {AI_texts} \n')
-    print(f'the AI based texts were incorrectly identified as human {false_AI} times out of {AI_texts} \n')
-    print(f'the Human based texts were correctly identified {correct_human} times out of {len(prompts) - AI_texts} \n')
-    print(f'the Human based texts were incorrectly identified as AI {false_human} times out of {len(prompts) - AI_texts} \n')
-    print(f'out of all {len(prompts)} texts {correct_AI + correct_human} were identified correctly \n')
+    # print the classification report with sklearn
+    print(classification_report(true_list, pred_list))
+
+    # print the confusion matrix with sklearn
+    matrix = confusion_matrix(true_list, pred_list)
+    print('confusion matrix:\n', matrix)
 
 
 def get_sentiment_analysis(data: List[Doc]) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
