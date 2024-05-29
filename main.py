@@ -5,18 +5,31 @@
 # Jasper #
 
 # import our modules
-from preprocessor import get_and_parse_texts, Path
-from pragmatics import get_sentiment_analysis
+from preprocessor import get_and_parse_texts, parse_promt_data, Path
+from pragmatics import do_sentiment_analysis, get_sentiment_results
 from morphology import morpology_results, morpology_calculator
-
-# from morphology import tokenize_and_lemmatize
+from syntax import do_sintactic_analysis, get_syntactic_results
 
 # import the supporting packages
 import argparse
 import os
+from sklearn.metrics import classification_report, confusion_matrix
 from spacy.tokens import Doc
-from typing import NewType
+from typing import NewType, Tuple, List
 Error = NewType('Error', str)
+
+
+def make_report(true_labels: List[str], pred_labels: List[str], by: str) -> None:
+    '''
+    Function to make the classification report
+    param true_labels: List[str], the true labels of the data
+    param pred_labels: List[str], the predicted labels of the data
+    '''
+
+    print(f'The report for the {by} results are: \n')
+    print(classification_report(true_labels, pred_labels))
+    matrix = confusion_matrix(true_labels, pred_labels)
+    print('the confusion matrix is: \n', matrix)
 
 
 def create_parser():
@@ -27,25 +40,23 @@ def create_parser():
     2. The path to the machine data
     '''
     parser = argparse.ArgumentParser(description='detection of AI generated text using NLP techniques')
-    parser.add_argument('human', metavar="human data", type=str, help='Path to the human data jsonl file')
-    parser.add_argument('machine', metavar="machine data", type=str, help='Path to the machine data jsonl file')
+    parser.add_argument('-t', '--training', metavar=('<human_data>', '<machine_data>'), nargs=2, type=str,
+                        help='Path to the human and machine data jsonl file')
+    parser.add_argument('prompt', metavar="prompt data", type=str,
+                        help='Path to the prompt data jsonl file')
     return parser.parse_args()
 
 
-def check_files(human: Path, machine: Path) -> None | Error:
+def check_file(data_path: Path) -> None | Error:
     '''
     Check if the given files exist and is of the correct type
     param human: str, the path to the human data jsonl file
     param machine: str, the path to the machine data jsonl file
     '''
-    if not os.path.exists(human):
-        raise FileNotFoundError('File path does not exist')
-    if not human.endswith('.jsonl'):
-        raise ValueError('File must be a .jsonl file')
-    if not os.path.exists(machine):
-        raise FileNotFoundError('File path does not exist')
-    if not machine.endswith('.jsonl'):
-        raise ValueError('File must be a .jsonl file')
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f'{data_path} does not exist')
+    if not data_path.endswith('.jsonl'):
+        raise ValueError(f'{data_path}, File must be a .jsonl file')
     
 
 def test_data(data: Doc) -> None | Error:
@@ -122,25 +133,40 @@ def test_data(data: Doc) -> None | Error:
 def main():
 
     args = create_parser()
-    check_files(args.human, args.machine)
+
+    if args.training:
+        human_path = Path(args.training[0])
+        machine_path = Path(args.training[1])
+
+        check_file(human_path)
+        check_file(machine_path)
+
+        # load the data from the jsonl files
+        human, machine = get_and_parse_texts(human_path, machine_path)
+
+        test_data(human[0])
+    
+    else:
+        human, machine = get_and_parse_texts(Path('human.jsonl'), Path('group1.jsonl'))
+
+    prompt_path = Path(args.prompt)
+
+    check_file(prompt_path)
 
     # load the data from the jsonl files
-    human, machine = get_and_parse_texts(args.human, args.machine)
+    prompts = parse_promt_data(prompt_path)
+    true_labels: List[str] = [prompt['by'] for prompt in prompts] # type: ignore
 
-    print(len(human))
-    print(len(machine))
+    # for the syntactic analysis
+    ratios = do_sintactic_analysis(human, machine)
+    syntactic_prediction = get_syntactic_results(ratios, prompts)
+    make_report(true_labels, syntactic_prediction, 'syntactic')
 
-    test_data(human[0])
-
-    # check the sentiment of the data
-    print('human sentiment analysis:')
-    get_sentiment_analysis(human)
-    print('machine sentiment analysis:')
-    get_sentiment_analysis(machine)
-
-    # check the morphology of the data
-    morpology_results(human, machine)
-    morpology_calculator(human, machine)
+    # for the pragmatic analysis
+    polarity, subjectivity =  do_sentiment_analysis(human)
+    comparison_data: Tuple[float, float, float, float] = (polarity[0], polarity[1], subjectivity[0], subjectivity[1])
+    sentiment_prediction = get_sentiment_results(prompts, comparison_data)
+    make_report(true_labels, sentiment_prediction, 'sentiment')
 
 
 if __name__ == '__main__':

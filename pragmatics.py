@@ -39,6 +39,24 @@ def pragmatic_predictor(text: Doc, comparison: Tuple[float, float, float, float]
     return chance / 2
 
 
+def get_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: Tuple[float, float, float, float]) -> List[str]:
+    '''
+    function to write the sentiment results
+    param prompts: List[Dict[str, Doc | str]], the data to check the sentiment of
+    param comparison_data: Tuple[float, float, float, float], the "norm" values to use
+    '''
+
+    # get the data
+    pred_list: List[str] = []
+    for prompt in prompts:
+        chance = pragmatic_predictor(prompt['text'], comparison_data) # type: ignore
+        if chance > 0.0:
+            pred_list.append('AI')
+        else:
+            pred_list.append('Human')
+
+    return pred_list
+
 def write_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: Tuple[float, float, float, float]) -> None:
     '''
     function to write the sentiment results
@@ -64,7 +82,7 @@ def write_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data
     print('confusion matrix:\n', matrix)
 
 
-def get_sentiment_analysis(data: List[Doc]) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
+def do_sentiment_analysis(data: List[Doc]) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
     '''
     Function to check the sentiment of the data
     param data: List[Doc], the data to check the sentiment of
@@ -109,8 +127,8 @@ def main():
     print('\n')
 
     # check the sentiment of the data
-    polarity, subjectivity =  get_sentiment_analysis(human)
-    get_sentiment_analysis(machine)
+    polarity, subjectivity =  do_sentiment_analysis(human)
+    do_sentiment_analysis(machine)
 
     comparison_data: Tuple[float, float, float, float] = (polarity[0], polarity[1], subjectivity[0], subjectivity[1])
 

@@ -6,9 +6,12 @@
 # Mervyn #
 
 # import preprocessor
-from preprocessor import get_and_parse_texts
+from preprocessor import get_and_parse_texts, Path, parse_promt_data
 
 # import other necessary packages
+from sklearn.metrics import classification_report, confusion_matrix
+from typing import List, Tuple
+from spacy.tokens import Doc
 from collections import Counter
 import nltk
 
@@ -58,7 +61,7 @@ def calculate_average_ratios(combined_ratios: dict) -> dict:
         total_ratio = 0
         for value in values:
             total_ratio += value
-        return value / len(values)
+        return total_ratio / len(values)
 
     # initialize dictionary
     average_ratio_dict = {}
@@ -106,42 +109,82 @@ def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, mach
                     machine_counter += 1
                 elif human_average_ratios[key] < machine_average_ratios[key]:
                     human_counter += 1
-            print(f'key measure: {key}, value measure: {value}')
-            print(f'ratio for unknown file: {unknown_average_ratios[key]}')
-            print(f'human ratio: {human_average_ratios[key]}, machine ratio: {machine_average_ratios[key]}')
-            print(f'human counter: {human_counter}, machine counter: {machine_counter}')
-            print('\n')
+            #print(f'key measure: {key}, value measure: {value}')
+            #print(f'ratio for unknown file: {unknown_average_ratios[key]}')
+            #print(f'human ratio: {human_average_ratios[key]}, machine ratio: {machine_average_ratios[key]}')
+            #print(f'human counter: {human_counter}, machine counter: {machine_counter}')
+            #print('\n')
 
-    print(f'human counter: {human_counter}, machine counter: {machine_counter}')
+    #print(f'human counter: {human_counter}, machine counter: {machine_counter}')
 
     # return human or machine according to the counters, if equal return undecided
     if human_counter > machine_counter:
         return 'Human'
-    elif human_counter < machine_counter:
-        return 'Machine'
     else:
-        return 'Undecided'
+        return 'AI'
+    
 
-
-def main():
-
-    # get data
-    human_text, machine_text = get_and_parse_texts('human.jsonl', 'group1.jsonl')
+def do_sintactic_analysis(human_text: list, machine_text: list) -> Tuple[dict, dict, dict]:
+    '''
+    Function that takes the human and machine text and returns a dictionary with the tags and their average ratios
+    parameter human_text: list of human text
+    parameter machine_text: list of machine text
+    dictionary key: tag as a string
+    dictionary value: average ratio as a float
+    '''
 
     human_ratios = get_ratio_dict(human_text)
     machine_ratios = get_ratio_dict(machine_text)
     human_average_ratios = calculate_average_ratios(human_ratios)
     machine_average_ratios = calculate_average_ratios(machine_ratios)
-    measure_ratios = calculate_measure_ratios(human_average_ratios, machine_average_ratios)
+    messure_ratios = calculate_measure_ratios(human_average_ratios, machine_average_ratios)
+    return messure_ratios, human_average_ratios, machine_average_ratios
 
-    # for the unknown text
-    unknown_text, unknown_text2 = get_and_parse_texts('human_sample.jsonl', 'group1.jsonl')
-    unknown_ratios = get_ratio_dict(unknown_text)
-    unknown_average_ratios = calculate_average_ratios(unknown_ratios)
 
-    # test for human or machine
-    answer = human_machine_decider(measure_ratios, human_average_ratios, machine_average_ratios, unknown_average_ratios)
-    print(f'text1: {answer}')
+def write_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> None:
+    
+    measure_ratios, human_average_ratios, machine_average_ratios = ratios
+    awnsers: list[str] = []
+    for id, text in enumerate(prompts):
+        unknown_ratios = get_ratio_dict([text['text']])
+        unknown_average_ratios = calculate_average_ratios(unknown_ratios)
+        answer = human_machine_decider(measure_ratios, human_average_ratios, machine_average_ratios, unknown_average_ratios)
+        awnsers.append(answer)
+        print(f'text{id:0>3}: predicted: {answer:10} actual: {text["by"]}')
+
+
+def get_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> list[str]:
+    
+    measure_ratios, human_average_ratios, machine_average_ratios = ratios
+    awnsers: list[str] = []
+    for text in prompts:
+        unknown_ratios = get_ratio_dict([text['text']])
+        unknown_average_ratios = calculate_average_ratios(unknown_ratios)
+        answer = human_machine_decider(measure_ratios, human_average_ratios, machine_average_ratios, unknown_average_ratios)
+        awnsers.append(answer)
+
+    return awnsers
+
+
+def main():
+
+    # get data
+    human_text, machine_text = get_and_parse_texts(Path('human.jsonl'), Path('group1.jsonl'))
+
+    all_ratios = do_sintactic_analysis(human_text, machine_text)
+
+    # for the unknown texts
+    prompts = parse_promt_data(Path('prompts.jsonl'))
+    true_list: list[str] = [text['by'] for text in prompts] # type: ignore
+
+    pred_list = get_syntactic_results(all_ratios, prompts)
+
+    # print classification report
+    print(classification_report(true_list, pred_list))
+
+    # print confusion matrix
+    matrix = confusion_matrix(true_list, pred_list)
+    print('confusion matrix:\n', matrix)
 
     '''
     # showing ratios for testing
