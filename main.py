@@ -7,16 +7,44 @@
 # import our modules
 from preprocessor import get_and_parse_texts, parse_promt_data, Path
 from pragmatics import do_sentiment_analysis, get_sentiment_results
-from morphology import morpology_results, morpology_calculator
+#from morphology import do_morpological_analysis, get_morpology_results
 from syntax import do_sintactic_analysis, get_syntactic_results
+#from semantics import do_semantic_analysis, get_semantic_results
 
 # import the supporting packages
 import argparse
 import os
+from collections import Counter
 from sklearn.metrics import classification_report, confusion_matrix
 from spacy.tokens import Doc
 from typing import NewType, Tuple, List
 Error = NewType('Error', str)
+
+
+def create_final_prediction(*results: List[str], true_labels: List[str]) -> None:
+    '''
+    Function to create the final prediction of the results
+    param results: List[str], the results of the different analysis
+    '''
+
+    transposed_results: List[List[str]] = [[results[j][i] for j in range(len(results))] for i in range(len(results[0]))]
+
+    predictions: List[str] = []
+    for idx, text_predictions in enumerate(transposed_results):
+        human: float = -(text_predictions.count('Human') * 0.99)
+        machine: float = (text_predictions.count('AI') * 1.01)
+        prediction: float = human + machine
+        prediction_str = 'Human' if prediction < 0 else 'AI'
+        predictions.append(prediction_str)
+        print(f'The final prediction is: {prediction_str} because it scored: {prediction:.3f}')
+        print (f'The true label is: {true_labels[idx]}\n')
+
+    print('The final classification report is: \n')
+    print(classification_report(true_labels, predictions, labels=['AI', 'Human'], zero_division=0))
+    matrix = confusion_matrix(true_labels, predictions, labels=['AI', 'Human'])
+    print('the confusion matrix is: \n', matrix)
+    
+
 
 
 def make_report(true_labels: List[str], pred_labels: List[str], by: str) -> None:
@@ -30,6 +58,7 @@ def make_report(true_labels: List[str], pred_labels: List[str], by: str) -> None
     print(classification_report(true_labels, pred_labels))
     matrix = confusion_matrix(true_labels, pred_labels)
     print('the confusion matrix is: \n', matrix)
+    print('\n')
 
 
 def create_parser():
@@ -127,28 +156,32 @@ def test_data(data: Doc) -> None | Error:
     if not data._.blob.sentiment_assessments.assessments:
         raise ValueError('No sentiment assessment found')
 
-    print('All tests passed')
-
 
 def main():
 
     args = create_parser()
 
+    print('Loading the training data')
     if args.training:
         human_path = Path(args.training[0])
         machine_path = Path(args.training[1])
 
         check_file(human_path)
         check_file(machine_path)
+        print('File paths are checked')
 
         # load the data from the jsonl files
         human, machine = get_and_parse_texts(human_path, machine_path)
+        print('Data is loaded')
 
         test_data(human[0])
+        print('All required spaCy-attributes are set')
     
     else:
         human, machine = get_and_parse_texts(Path('human.jsonl'), Path('group1.jsonl'))
+        print('Data is loaded')
 
+    print('\nLoading the prompt data')
     prompt_path = Path(args.prompt)
 
     check_file(prompt_path)
@@ -157,16 +190,29 @@ def main():
     prompts = parse_promt_data(prompt_path)
     true_labels: List[str] = [prompt['by'] for prompt in prompts] # type: ignore
 
+    # for the morphological analysis
+    #something = do_morpological_analysis(human, machine)
+    #morpology_prediction = get_morpology_results(something, prompts)
+    #make_report(true_labels, semantic_prediction, 'morpological')
+
     # for the syntactic analysis
     ratios = do_sintactic_analysis(human, machine)
     syntactic_prediction = get_syntactic_results(ratios, prompts)
-    make_report(true_labels, syntactic_prediction, 'syntactic')
+    #make_report(true_labels, syntactic_prediction, 'syntactic')
+
+    # for the semantic analysis
+    #something = do_semantic_analysis(human, machine)
+    #semantic_prediction = get_semantic_results(human, machine, prompts)
+    #make_report(true_labels, semantic_prediction, 'semantic')
 
     # for the pragmatic analysis
     polarity, subjectivity =  do_sentiment_analysis(human)
     comparison_data: Tuple[float, float, float, float] = (polarity[0], polarity[1], subjectivity[0], subjectivity[1])
     sentiment_prediction = get_sentiment_results(prompts, comparison_data)
-    make_report(true_labels, sentiment_prediction, 'sentiment')
+    #make_report(true_labels, sentiment_prediction, 'pragmatic')
+
+    # create the final prediction
+    create_final_prediction(syntactic_prediction, sentiment_prediction, true_labels=true_labels)    
 
 
 if __name__ == '__main__':
