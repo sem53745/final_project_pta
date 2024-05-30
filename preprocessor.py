@@ -91,7 +91,7 @@ def parse_promt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
     # check if the prompt data is human or machine
     if 'human' in str(prompt_file).lower():
         prompt_data = process_prompt_data(prompt_list, nlp, 'Human')
-    elif 'machine' in str(prompt_file).lower():
+    elif 'group' in str(prompt_file).lower():
         prompt_data = process_prompt_data(prompt_list, nlp, 'AI')
 
     # if neither is found, the annotation is in the jsonl file itself
