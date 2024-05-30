@@ -8,7 +8,7 @@
 from preprocessor import get_and_parse_texts, parse_promt_data, Path
 from pragmatics import do_sentiment_analysis, get_sentiment_results
 #from morphology import do_morpological_analysis, get_morpology_results
-from syntax import do_sintactic_analysis, get_syntactic_results
+from syntax import do_syntactic_analysis, get_syntactic_results
 #from semantics import do_semantic_analysis, get_semantic_results
 
 # import the supporting packages
@@ -196,7 +196,7 @@ def main():
     #make_report(true_labels, semantic_prediction, 'morpological')
 
     # for the syntactic analysis
-    ratios = do_sintactic_analysis(human, machine)
+    ratios = do_syntactic_analysis(human, machine)
     syntactic_prediction = get_syntactic_results(ratios, prompts)
     #make_report(true_labels, syntactic_prediction, 'syntactic')
 
