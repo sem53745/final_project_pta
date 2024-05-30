@@ -47,15 +47,17 @@ def load_jsonl(file_path: Path) -> List[Dict[str, str]]:
 
 
 # subfunction to process the data with spacy
-def process_prompt_data(data: List[Dict[str, str]], nlp: Language) -> List[Dict[str, Doc | str]]:
+def process_prompt_data(data: List[Dict[str, str]], nlp: Language, annotation: str | None = None) -> List[Dict[str, Doc | str]]:
     # Extract text data
     text_data: List[str] = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
-    text_by: List[str] = [entry['by'] for entry in data if 'by' in entry and entry['by'].strip()]
     docs: List[Doc] = list(nlp.pipe(text_data))
 
-    # format the data into a list of dictionaries
-    prompt_data: List[Dict[str, Doc | str]] = [{'text': doc, 'by': by} for doc, by in zip(docs, text_by)]
-    return prompt_data
+    if annotation:
+        return [{'text': doc, 'by': annotation} for doc in docs]
+    else:
+        text_by: List[str] = [entry['by'] for entry in data if 'by' in entry and entry['by'].strip()]
+        return [{'text': doc, 'by': by} for doc, by in zip(docs, text_by)]
+    
 
 
 def process_data(data: List[Dict[str, str]], nlp: Language) -> List[Doc]:
@@ -70,7 +72,7 @@ def load_spacy_model() -> Language:
     # load the spacy model and add the necessary components
     nlp: Language = spacy.load("en_core_web_sm")
     nlp.add_pipe('spacytextblob')
-    # nlp.add_pipe('fastcoref')
+    nlp.add_pipe('fastcoref')
     return nlp
 
 
@@ -83,9 +85,18 @@ def parse_promt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
     # load the spacy model
     nlp: Language = load_spacy_model()
 
-    # load the data
+    # load the prompt data from the jsonl file
     prompt_list: List[Dict[str, str]] = load_jsonl(prompt_file)
-    prompt_data = process_prompt_data(prompt_list, nlp)
+
+    # check if the prompt data is human or machine
+    if 'human' in str(prompt_file).lower():
+        prompt_data = process_prompt_data(prompt_list, nlp, 'Human')
+    elif 'machine' in str(prompt_file).lower():
+        prompt_data = process_prompt_data(prompt_list, nlp, 'AI')
+
+    # if neither is found, the annotation is in the jsonl file itself
+    else:
+        prompt_data = process_prompt_data(prompt_list, nlp)
 
     return prompt_data
 
@@ -100,12 +111,12 @@ def get_and_parse_texts(human_data: Path, machine_data: Path) -> Tuple[List[Doc]
     nlp: Language = load_spacy_model()
     
     # load the data
-    human_data_list: List[Dict[str, str]] = load_jsonl(human_data)
-    machine_data_list: List[Dict[str, str]] = load_jsonl(machine_data)
+    human_data_list = load_jsonl(human_data)
+    machine_data_list = load_jsonl(machine_data)
 
     # process the data
-    human_docs: List[Doc] = process_data(human_data_list, nlp)
-    machine_docs: List[Doc] = process_data(machine_data_list, nlp)
+    human_docs = process_data(human_data_list, nlp)
+    machine_docs = process_data(machine_data_list, nlp)
 
     return human_docs, machine_docs        
 
