@@ -1,16 +1,20 @@
 # Program name: morphology.py
 # Date: 03/06
-# Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
+# Contributors: Jasper Kleine (s5152372), Sem Bartels (s5374588)
 
 from spacy.tokens import Doc
 from collections import Counter
-from preprocessor import get_and_parse_texts, Path
+from preprocessor import parse_promt_data, get_and_parse_texts, Path
 from typing import List, Tuple
+from spacy.language import Language
+from spacy import load as load_spacy_model
+nlp = load_spacy_model("en_core_web_sm")
 
 # Sem wrote the code, Jasper added Type-hints #
 
 # Tokenization and Lemmatization
 def tokenize_and_lemmatize(texts: List[Doc]) -> Tuple[List[str], List[str]]:
+    """This function tokenizes the data"""
     tokens: List[str] = []
     lemmas: List[str] = []
     for doc in texts:
@@ -19,18 +23,18 @@ def tokenize_and_lemmatize(texts: List[Doc]) -> Tuple[List[str], List[str]]:
     return tokens, lemmas
 
 
-def morpology_results(human_texts: List[Doc], machine_texts: List[Doc]):
+def morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]):
+    """This function analysis the human and machine test data"""
     human_tokens, human_lemmas = tokenize_and_lemmatize(human_texts)
     machine_tokens, machine_lemmas = tokenize_and_lemmatize(machine_texts)
 
-    # Number of tokens and lemmas in the human and machine
     # Average number of tokens and lemmas per line for both the machine and human data
     print(f'Average tokens per line for the human data: {round(len(human_tokens) / len(human_texts), 1)}')
     print(f'Average tokens per line for the machine data: {round(len(machine_tokens) / len(machine_texts), 1)}')
     print(f'Average lemmas per line for the human data: {round(len(human_lemmas) / len(human_texts), 1)}')
     print(f'Average lemmas per line for the machine data: {round(len(machine_lemmas) / len(machine_texts), 1)}\n')
 
-    # Looking at the frequency of certain tokens
+    # Looking at the frequency of tokens
     human_tokens_count = Counter(human_tokens)
     machine_tokens_count = Counter(machine_tokens)
     print("Human:")
@@ -38,47 +42,95 @@ def morpology_results(human_texts: List[Doc], machine_texts: List[Doc]):
         print(item)
     print("\nMachine:")
     for item in machine_tokens_count.most_common(10):
-    	print(item)
+        print(item)
 
-
-def morpology_calculator(human_data: List[Doc], machine_data: List[Doc]):
-    # Tries to tell if the line is human or machine when looking at the ratio kommas/points
-    human_accuracy_counter: int = 0
-    for line in human_data:
+    # Calculation comma/point ratio for human data
+    total_point_count = 0
+    total_comma_count = 0
+    human_accuracy_counter = 0
+    for line in human_texts:
         point_count = line.text.count('.')
         comma_count = line.text.count(',')
+        total_point_count += point_count
+        total_comma_count += comma_count
         if point_count > 0:
-            if comma_count / point_count > 0.93:
+            if comma_count / point_count > 0.815:
                 human_accuracy_counter += 1
-                # Optional: Print we think this line is human
-    human_accuracy: float = human_accuracy_counter / len(human_data)
-    print(f"\nHuman accuracy: {human_accuracy:.2f}")
+    human_accuracy = human_accuracy_counter / len(human_texts)
+    print(f"\nComma/point ratio human data {(total_comma_count/total_point_count):.2f}")
+    print(f"Human accuracy: {human_accuracy:.2f}")
 
-    machine_accuracy_counter: int = 0
-    for line in machine_data:
+    # Calculation comma/point ratio for machine data
+    total_point_count = 0
+    total_comma_count = 0
+    machine_accuracy_counter = 0
+    for line in machine_texts:
         point_count = line.text.count('.')
-        komma_count = line.text.count(',')
+        comma_count = line.text.count(',')
+        total_point_count += point_count
+        total_comma_count += comma_count
         if point_count > 0:
-            if komma_count / point_count < 0.93:
+            if comma_count / point_count < 0.815:
                 machine_accuracy_counter += 1
-                # Optional: Print we think this line is machine
-    machine_accuracy: float = machine_accuracy_counter / len(machine_data)
+    machine_accuracy = machine_accuracy_counter / len(machine_texts)
+    print(f"\nComma/point ratio machine data {(total_comma_count/total_point_count):.2f}")
     print(f"Machine accuracy: {machine_accuracy:.2f}")
 
+def morphology_results(prompt_file: Path) -> List[str]:
+    """This function predicts if each line in the input file is written by a human or a machine."""
+    # Parse the prompt data
+    prompt_data = parse_promt_data(prompt_file)
+    texts = [entry['text'] for entry in prompt_data]
+    
+    # Calculate the average comma/point ratio for the entire data
+    total_point_count = 0
+    total_comma_count = 0
+    for line in texts:
+        total_point_count += line.text.count('.')
+        total_comma_count += line.text.count(',')
+    
+    if total_point_count == 0:
+        average_ratio = 0  # Avoid division by zero
+    else:
+        average_ratio = total_comma_count / total_point_count
+    
+    # Initialize the results list
+    results = []
+    
+    # Analyze each line using the calculated average ratio as threshold
+    for line in texts:
+        point_count = line.text.count('.')
+        comma_count = line.text.count(',')
+        
+        if point_count > 0:
+            ratio = comma_count / point_count
+            if ratio > average_ratio:
+                results.append("Human")
+            else:
+                results.append("AI")
+        else:
+            # If there are no points, we can't calculate the ratio. Default to "Human"
+            results.append("Human")
+    
+    return results
 
 def main():
+    # Load the test data
+    #human_data: Path = Path('human.jsonl')
+    #machine_data: Path = Path('group1.jsonl')
 
-    # load the data
-    human_data: Path = Path('human_sample.jsonl')
-    machine_data: Path = Path('group1_sample.jsonl')
+    human_data_path: Path = Path('human_sample.jsonl')
+    machine_data_path: Path = Path('group1.jsonl')
 
-    # process the data
-    human_texts, machine_texts = get_and_parse_texts(human_data, machine_data)
+    # Perform morphology analysis on the human and machine data
+    print(morphology_results(human_data_path))
+    #morphology_results(machine_data_path)
 
-    morpology_results(human_texts, machine_texts)
+    # Process the data
+    #human_texts, machine_texts = get_and_parse_texts(human_data, machine_data)
 
-    morpology_calculator(human_texts, machine_texts)
-
+    # Perform the analysis on the test data
+    #morpology_analysis(human_texts, machine_texts)
 
 if __name__ == '__main__':
     main()
