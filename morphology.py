@@ -4,8 +4,11 @@
 
 from spacy.tokens import Doc
 from collections import Counter
-from preprocessor import get_and_parse_texts, Path
+from preprocessor import parse_promt_data, get_and_parse_texts, Path
 from typing import List, Tuple
+from spacy.language import Language
+from spacy import load as load_spacy_model
+nlp = load_spacy_model("en_core_web_sm")
 
 # Sem wrote the code, Jasper added Type-hints #
 
@@ -73,10 +76,11 @@ def morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]):
     print(f"\nComma/point ratio machine data {(total_comma_count/total_point_count):.2f}")
     print(f"Machine accuracy: {machine_accuracy:.2f}")
 
-def morphology_results(file_path: Path) -> List[str]:
+def morphology_results(prompt_file: Path) -> List[str]:
     """This function predicts if each line in the input file is written by a human or a machine."""
-    # Load and parse the data
-    texts = get_and_parse_texts(file_path)
+    # Parse the prompt data
+    prompt_data = parse_promt_data(prompt_file)
+    texts = [entry['text'] for entry in prompt_data]
     
     # Calculate the average comma/point ratio for the entire data
     total_point_count = 0
@@ -112,15 +116,21 @@ def morphology_results(file_path: Path) -> List[str]:
 
 def main():
     # Load the test data
-    human_data: Path = Path('human.jsonl')
-    machine_data: Path = Path('group1.jsonl')
+    #human_data: Path = Path('human.jsonl')
+    #machine_data: Path = Path('group1.jsonl')
+
+    human_data_path: Path = Path('human_sample.jsonl')
+    machine_data_path: Path = Path('group1.jsonl')
+
+    # Perform morphology analysis on the human and machine data
+    print(morphology_results(human_data_path))
+    #morphology_results(machine_data_path)
 
     # Process the data
-    human_texts, machine_texts = get_and_parse_texts(human_data, machine_data)
+    #human_texts, machine_texts = get_and_parse_texts(human_data, machine_data)
 
     # Perform the analysis on the test data
-    morpology_analysis(human_texts, machine_texts)
-    #morphology_results(human_texts)
+    #morpology_analysis(human_texts, machine_texts)
 
 if __name__ == '__main__':
     main()
