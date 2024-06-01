@@ -3,7 +3,7 @@
 # Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
 
 from preprocessor import get_and_parse_texts, Path, parse_promt_data
-from typing import Tuple, List, Dict, NewType
+from typing import Tuple, List, Dict, Literal
 from spacy.tokens import Doc
 from fastcoref import spacy_component
 from collections import Counter
@@ -74,8 +74,7 @@ def human_or_ai(value_to_divide_by:int, value_to_divide:int, separator:float):
             return "AI"
 
 
-def get_semantic_results(seperators:tuple[float, float, float], prompts: List[Dict[str, Doc | str]]):
-
+def get_semantic_results(seperators:tuple[float, float, float], prompts: List[Dict[str, Doc | str]]) -> List[Tuple[Literal['Human', 'Unsure', 'AI'], float]]:
     human_counter = 0
     ai_counter = 0
     separator_NE_sentence, separator_references, separator_synsets_verb = seperators
@@ -98,18 +97,23 @@ def get_semantic_results(seperators:tuple[float, float, float], prompts: List[Di
         else:
             ai_counter += 1
 
+        max_score = 3
+        guessed = max(human_counter, ai_counter)
+        certainty = guessed / max_score
         if human_counter > ai_counter:
-            answers.append("Human")
+            answers.append(("Human", certainty))
             #print(prompt['by'], end = ", ")
             #print("Human")
         elif human_counter == ai_counter:
-            answers.append("Unsure")
+            answers.append(("Unsure", certainty))
             #print(prompt['by'], end = ", ")
             #print("Unsure")
         else:
-            answers.append("AI")
+            answers.append(("AI", certainty))
             #print(prompt['by'], end = ", ")
             #print("AI")
+
+
 
     return answers
 
