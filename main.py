@@ -7,7 +7,7 @@
 # import our modules
 from preprocessor import get_and_parse_texts, parse_prompt_data, Path
 from pragmatics import do_sentiment_analysis, get_sentiment_results
-from morphology import get_morphology_results
+from morphology import do_morpology_analysis, get_morphology_results
 from syntax import do_syntactic_analysis, get_syntactic_results
 from semantics import do_semantic_analysis, get_semantic_results
 
@@ -21,7 +21,7 @@ from typing import NewType, Tuple, List, Literal
 Error = NewType('Error', str)
 
 
-def create_final_prediction(*results: List[Tuple[Literal['Human', 'Unsure', 'AI'], float]], true_labels: List[str]) -> None:
+def create_final_prediction(*results: List[str], true_labels: List[str]) -> None:
     '''
     Function to create the final prediction of the results
     param results: List[str], the results of the different analysis
@@ -29,24 +29,27 @@ def create_final_prediction(*results: List[Tuple[Literal['Human', 'Unsure', 'AI'
 
     transposed_results = [[results[j][i] for j in range(len(results))] for i in range(len(results[0]))]
 
-    predictions: List[str] = []
+    final_predictions: List[str] = []
     for idx, text_predictions in enumerate(transposed_results):
-        text_predictions = [result for result in text_predictions if result[0] in ['AI', 'Human'] and result[1] > 0.5]
-        text_predictions, certanties = zip(*text_predictions)
+        predictions = [result for result in text_predictions if result in ['AI', 'Human']]
 
-        human = -(text_predictions.count('Human') * 0.99)
-        machine = (text_predictions.count('AI') * 1.01)
-        prediction = human + machine
-        prediction_certainty = sum(certanties) / len(certanties)
+        human_count = predictions.count('Human')
+        ai_count = predictions.count('AI')
 
-        prediction_str = 'Human' if prediction < 0 else 'AI'
-        predictions.append(prediction_str)
-        print(f'The final prediction is: {prediction_str} because it scored: {prediction:.3f}, with a certainty of: {prediction_certainty:.3f}')
+        if ai_count >= human_count:
+            prediction: str = 'AI'
+            score: float = ai_count
+        else:
+            prediction = 'Human'
+            score: float = human_count
+
+        final_predictions.append(prediction)
+        print(f'The final prediction is: {prediction} because it was predicted {score} times out of {len(predictions)}')
         print (f'The true label is: {true_labels[idx]}\n')
 
     print('The final classification report is: \n')
-    print(classification_report(true_labels, predictions, labels=['AI', 'Human'], zero_division=0))
-    matrix = confusion_matrix(true_labels, predictions, labels=['AI', 'Human'])
+    print(classification_report(true_labels, final_predictions, labels=['AI', 'Human'], zero_division=0))
+    matrix = confusion_matrix(true_labels, final_predictions, labels=['AI', 'Human'])
     print('the confusion matrix is: \n', matrix)
 
 
@@ -196,18 +199,21 @@ def main():
     true_labels: List[str] = [prompt['by'] for prompt in prompts] # type: ignore
 
     # for the morphological analysis
-    morpology_prediction = get_morphology_results(prompts)
+    morphology_ratios = do_morpology_analysis(human, machine)
+    morpology_prediction = get_morphology_results(prompts, morphology_ratios)
     #make_report(true_labels, morpology_prediction, 'morpological')
 
     # for the syntactic analysis
     ratios = do_syntactic_analysis(human, machine)
     syntactic_prediction = get_syntactic_results(ratios, prompts)
     #make_report(true_labels, syntactic_prediction, 'syntactic')
+    syntactic_prediction = [result[0] for result in syntactic_prediction]
 
     # for the semantic analysis
     seperators = do_semantic_analysis(human, machine)
     semantic_prediction = get_semantic_results(seperators, prompts)
     #make_report(true_labels, semantic_prediction, 'semantic')
+    semantic_prediction = [result[0] for result in semantic_prediction]
 
     # for the pragmatic analysis
     polarity, subjectivity =  do_sentiment_analysis(human)
