@@ -31,7 +31,7 @@ def create_final_prediction(*results: List[str], true_labels: List[str]) -> None
 
     final_predictions: List[str] = []
     for idx, text_predictions in enumerate(transposed_results):
-        predictions = [result for result in text_predictions if result in ['AI', 'Human']]
+        predictions = [result if result in ['AI', 'Human'] else 'AI' for result in text_predictions]
 
         human_count = predictions.count('Human')
         ai_count = predictions.count('AI')
@@ -200,7 +200,7 @@ def main():
 
     # for the morphological analysis
     morphology_ratios = do_morpology_analysis(human, machine)
-    morpology_prediction = get_morphology_results(prompts, morphology_ratios)
+    morphology_prediction = get_morphology_results(prompts, morphology_ratios)
     #make_report(true_labels, morpology_prediction, 'morpological')
 
     # for the syntactic analysis
@@ -222,7 +222,7 @@ def main():
     #make_report(true_labels, sentiment_prediction, 'pragmatic')
 
     # create the final prediction
-    create_final_prediction(morpology_prediction, syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
+    create_final_prediction(morphology_prediction, syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
 
 
 if __name__ == '__main__':
