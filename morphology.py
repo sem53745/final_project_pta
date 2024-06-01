@@ -4,8 +4,8 @@
 
 from spacy.tokens import Doc
 from collections import Counter
-from preprocessor import parse_promt_data, get_and_parse_texts, Path
-from typing import List, Tuple
+from preprocessor import parse_prompt_data, get_and_parse_texts, Path
+from typing import List, Tuple, Literal
 from spacy.language import Language
 from spacy import load as load_spacy_model
 nlp = load_spacy_model("en_core_web_sm")
@@ -76,42 +76,46 @@ def morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]):
     print(f"\nComma/point ratio machine data {(total_comma_count/total_point_count):.2f}")
     print(f"Machine accuracy: {machine_accuracy:.2f}")
 
-def morphology_results(prompt_file: Path) -> List[str]:
+def get_morphology_results(prompts: List[dict[str, str | Doc]]) -> List[Tuple[Literal['Human', 'Unsure', 'AI'], float]]:
     """This function predicts if each line in the input file is written by a human or a machine."""
     # Parse the prompt data
-    prompt_data = parse_promt_data(prompt_file)
-    texts = [entry['text'] for entry in prompt_data]
-    
+    texts = [entry['text'] for entry in prompts]
+
     # Calculate the average comma/point ratio for the entire data
     total_point_count = 0
     total_comma_count = 0
     for line in texts:
         total_point_count += line.text.count('.')
         total_comma_count += line.text.count(',')
-    
+
     if total_point_count == 0:
         average_ratio = 0  # Avoid division by zero
     else:
         average_ratio = total_comma_count / total_point_count
-    
+
     # Initialize the results list
     results = []
-    
+
     # Analyze each line using the calculated average ratio as threshold
     for line in texts:
         point_count = line.text.count('.')
         comma_count = line.text.count(',')
-        
+
+        # there is only 1 feature, so the certainty is always 1
+        # The exception is when there are no points, then the ratio can't be calculated
+        # and the certainty is 0
+
         if point_count > 0:
+            certainty = 1
             ratio = comma_count / point_count
             if ratio > average_ratio:
-                results.append("Human")
+                results.append(("Human", certainty))
             else:
-                results.append("AI")
+                results.append(("AI", certainty))
         else:
-            # If there are no points, we can't calculate the ratio. Default to "Human"
-            results.append("Human")
-    
+            # If there are no points, we can't calculate the ratio. Return Unsure, so we can ignore it later"
+            results.append(("Unsure", 0))
+
     return results
 
 def main():
@@ -123,7 +127,7 @@ def main():
     machine_data_path: Path = Path('group1.jsonl')
 
     # Perform morphology analysis on the human and machine data
-    print(morphology_results(human_data_path))
+    print(get_morphology_results(human_data_path))
     #morphology_results(machine_data_path)
 
     # Process the data

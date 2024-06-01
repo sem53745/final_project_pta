@@ -5,7 +5,7 @@
 
 # Jasper #
 
-from preprocessor import get_and_parse_texts, parse_promt_data, Path
+from preprocessor import get_and_parse_texts, parse_prompt_data, Path
 from spacy.tokens import Doc
 from sklearn.metrics import classification_report, confusion_matrix
 from typing import List, Tuple, Dict
@@ -14,7 +14,7 @@ from typing import List, Tuple, Dict
 DEBUG = False
 
 
-def pragmatic_predictor(text: Doc, comparison: Tuple[float, float, float, float]) -> float:
+def pragmatic_predictor(text: Doc, comparison: Tuple[float, float, float, float]):
     '''
     Function to predict the pragmatic score of the data
     param data: Doc, the text to predict the pragmatic score of
@@ -29,14 +29,14 @@ def pragmatic_predictor(text: Doc, comparison: Tuple[float, float, float, float]
     pragmatic_subjectivity: float = text._.blob.subjectivity # type: ignore
 
     # check if the pragmatic values are outside the "normal" values with a small margin
-    chance: int = 0
+    ai_counter: int = 0
     if pragmatic_polarity > (max_sent * 1.025) or pragmatic_polarity < (min_sent * 1.025):
-        chance += 1
+        ai_counter += 1
     if pragmatic_subjectivity > (max_subj * 1.025) or pragmatic_subjectivity < (min_subj * 1.025):
-        chance += 1
+        ai_counter += 1
 
     # return the chance of the text being AI based on the pragmatic values being outside the "normal" values
-    return chance / 2
+    return ai_counter
 
 
 def get_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: Tuple[float, float, float, float]) -> List[str]:
@@ -50,10 +50,12 @@ def get_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: 
     pred_list: List[str] = []
     for prompt in prompts:
         chance = pragmatic_predictor(prompt['text'], comparison_data) # type: ignore
-        if chance > 0.0:
-            pred_list.append('AI')
+        if chance == 2:
+            pred_list.append(('AI', 1.0))
+        elif chance == 1:
+            pred_list.append(('Unsure', 0))
         else:
-            pred_list.append('Human')
+            pred_list.append(('Human', 1.0))
 
     return pred_list
 
@@ -127,7 +129,7 @@ def main():
     comparison_data: Tuple[float, float, float, float] = (polarity[0], polarity[1], subjectivity[0], subjectivity[1])
 
     # get the prompt data
-    prompts = parse_promt_data(Path('prompts.jsonl'))
+    prompts = parse_prompt_data(Path('prompts.jsonl'))
 
     write_sentiment_results(prompts, comparison_data)
 

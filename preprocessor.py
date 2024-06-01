@@ -57,7 +57,7 @@ def process_prompt_data(data: List[Dict[str, str]], nlp: Language, annotation: s
     else:
         text_by: List[str] = [entry['by'] for entry in data if 'by' in entry and entry['by'].strip()]
         return [{'text': doc, 'by': by} for doc, by in zip(docs, text_by)]
-    
+
 
 
 def process_data(data: List[Dict[str, str]], nlp: Language) -> List[Doc]:
@@ -76,7 +76,7 @@ def load_spacy_model() -> Language:
     return nlp
 
 
-def parse_promt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
+def parse_prompt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
     '''
     Function to parse the prompt data
     param prompt_file: str, the path to the jsonl file with the prompt data
@@ -91,7 +91,7 @@ def parse_promt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
     # check if the prompt data is human or machine
     if 'human' in str(prompt_file).lower():
         prompt_data = process_prompt_data(prompt_list, nlp, 'Human')
-    elif 'group' in str(prompt_file).lower():
+    elif 'machine' in str(prompt_file).lower():
         prompt_data = process_prompt_data(prompt_list, nlp, 'AI')
 
     # if neither is found, the annotation is in the jsonl file itself
@@ -102,14 +102,14 @@ def parse_promt_data(prompt_file: Path) -> List[Dict[str, Doc | str]]:
 
 
 def get_and_parse_texts(human_data: Path, machine_data: Path) -> Tuple[List[Doc], List[Doc]]:
-    ''' 
+    '''
     Function to load and parse the texts from the jsonl files
     param human_data: str, the path to the jsonl file with the human data
     param machine_data: str, the path to the jsonl file with the machine data
     '''
 
     nlp: Language = load_spacy_model()
-    
+
     # load the data
     human_data_list = load_jsonl(human_data)
     machine_data_list = load_jsonl(machine_data)
@@ -118,11 +118,11 @@ def get_and_parse_texts(human_data: Path, machine_data: Path) -> Tuple[List[Doc]
     human_docs = process_data(human_data_list, nlp)
     machine_docs = process_data(machine_data_list, nlp)
 
-    return human_docs, machine_docs        
+    return human_docs, machine_docs
 
 
 def main():
-    
+
     # load the data
     human_data: Path = Path('human_sample.jsonl')
     machine_data: Path = Path('group1_sample.jsonl')
@@ -134,7 +134,7 @@ def main():
     print(len(human))
     print(len(machine))
 
-    promts = parse_promt_data(Path('prompts.jsonl'))
+    promts = parse_prompt_data(Path('prompts.jsonl'))
 
     print(len(promts))
 
