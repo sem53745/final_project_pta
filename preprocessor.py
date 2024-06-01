@@ -26,7 +26,11 @@ except ImportError:
     try:
         from nltk.corpus import wordnet as wn # type: ignore
     except ImportError:
-        exit('Please install the nltk wordnet package')
+        subprocess.run('pip install -r requirements.txt', shell = True, executable="/bin/bash")
+        try:
+            from nltk.corpus import wordnet as wn # type: ignore
+        except ImportError:
+            exit('Please install the nltk wordnet package')
 
 # try importing the spacytextblob package, if it fails, download it
 try:
@@ -36,7 +40,10 @@ except ImportError:
     try:
         from spacytextblob.spacytextblob import SpacyTextBlob # type: ignore
     except ImportError:
-        exit('Please install the textblob package')
+            try:
+                subprocess.run('pip install -r requirements.txt', shell = True, executable="/bin/bash")
+            except ImportError:
+                exit('Please install the textblob package')
 
 
 # subfunction to load the jsonl files
