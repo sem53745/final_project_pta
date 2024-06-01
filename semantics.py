@@ -48,7 +48,16 @@ def perform_analysis_single(doc:Doc):
     sentence_amount += len(list(doc.sents))
     NE_amount += len(list(doc.ents))
     coref_amount += len(list(doc._.coref_clusters))
-    synset_amount += len(list(wn.synsets(verb.lemma_, pos=wn.VERB)) for verb in doc if verb.pos_ == "VERB")
+    reference_amount += len(list(reference for cluster in doc._.coref_clusters for reference in cluster))
+    #synset_amount += len(list(wn.synsets(word.lemma_, pos=wn.VERB) for word in doc if word.pos_ == "VERB"))
+    verb_amount += len(list(word for word in doc if word.pos_ == "VERB"))
+    
+    for word in doc:
+        if word.pos_ == "VERB":
+            #verb_amount += 1
+            lemma = word.lemma_
+            synsets = wn.synsets(lemma, pos=wn.VERB)
+            synset_amount += len(synsets)
 
     return coref_amount, reference_amount, sentence_amount, NE_amount, verb_amount, synset_amount
 
@@ -120,7 +129,7 @@ def main():
     NE_sentence_separator, references_amount_separator, synsets_verb_separator = do_semantic_analysis(human_text, machine_text)
 
     prompts = parse_promt_data(Path('prompts.jsonl'))
-    results = get_semantic_results(NE_sentence_separator, references_amount_separator, synsets_verb_separator, prompts)
+    results = get_semantic_results((NE_sentence_separator, references_amount_separator, synsets_verb_separator), prompts)
 
 
 if __name__ == "__main__":
