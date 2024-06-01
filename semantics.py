@@ -1,5 +1,5 @@
 # Program name: semantics.py
-# Date: 30/05
+# Date: 01/06
 # Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
 
 from preprocessor import get_and_parse_texts, Path, parse_promt_data
@@ -40,8 +40,6 @@ def perform_analysis(texts):
     references_per_cluster = total_reference_amount / total_coref_amount
     average_NE_sentence = amount_of_NEs / amount_of_sentences
     synsets_per_verb = amount_of_synsets / amount_of_verbs
-    
-    # Some print statements here to confirm values later
 
     return references_per_cluster, average_NE_sentence, synsets_per_verb
 
@@ -88,6 +86,15 @@ def do_semantic_analysis(human_texts, machine_texts):
     return separator_value_NE_sentence, separator_value_references, separator_value_synsets_verb
 
 
+def human_or_ai(value_to_divide_by, value_to_divide, separator):
+
+    if value_to_divide_by != 0:
+        if (value_to_divide / value_to_divide_by) > separator:
+            return "Human"
+        elif (value_to_divide / value_to_divide_by) < separator:
+            return "AI"
+
+
 def get_semantic_results(separator_NE_sentence, separator_references, separator_synsets_verb, prompts):
 
     human_counter = 0
@@ -95,28 +102,34 @@ def get_semantic_results(separator_NE_sentence, separator_references, separator_
     answers = []
     for prompt in prompts:
         coref_current, references_current, sentences_current, NE_current, verbs_current, synsets_current = perform_analysis_single(prompt['text'])
-            
-        if (references_current / coref_current) > separator_references:
-            human_counter += 1
+        
+        if human_or_ai(coref_current, references_current, separator_references) == "Human":
+            human_counter +=1
         else:
             ai_counter += 1
             
-        if (NE_current / sentences_current) > separator_NE_sentence:
-            human_counter += 1
+        if human_or_ai(sentences_current, NE_current, separator_NE_sentence) == "Human":
+            human_counter +=1
         else:
             ai_counter += 1
             
-        if (synsets_current / verbs_current) > separator_synsets_verb:
-            human_counter += 1
+        if human_or_ai(verbs_current, synsets_current, separator_synsets_verb) == "Human":
+            human_counter +=1
         else:
             ai_counter += 1
 
         if human_counter > ai_counter:
             answers.append("Human")
-            print("Human")
+            #print(prompt['by'], end = ", ")
+            #print("Human")
+        elif human_counter == ai_counter:
+            answers.append("Unsure")
+            #print(prompt['by'], end = ", ")
+            #print("Unsure")
         else:
             answers.append("AI")
-            print("AI")
+            #print(prompt['by'], end = ", ")
+            #print("AI")
 
     return answers
 
