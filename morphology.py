@@ -5,10 +5,10 @@
 from spacy.tokens import Doc
 from collections import Counter
 from preprocessor import parse_promt_data, get_and_parse_texts, Path
-from typing import List, Tuple
-from spacy.language import Language
-from spacy import load as load_spacy_model
-nlp = load_spacy_model("en_core_web_sm")
+from typing import List, Tuple, Dict
+from sklearn.metrics import classification_report, confusion_matrix
+
+DEBUG = False
 
 # Sem wrote the code, Jasper added Type-hints #
 
@@ -23,114 +23,146 @@ def tokenize_and_lemmatize(texts: List[Doc]) -> Tuple[List[str], List[str]]:
     return tokens, lemmas
 
 
-def morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]):
+def calculate_ratios(texts: List[Doc]) -> Dict[str, float]:
+    '''
+    This function calculates the ratios of the data
+    it calculates the comma/point ratio, the token/lemma ratio and the token/types ratio
+    param texts: List[Doc], the data to calculate the ratios of
+    param for_: str, the name of the data
+    '''
+    ratios: Dict[str, float] = {}
+
+    # Calculation comma/point ratio for human data
+    point_count: int = 0
+    comma_count: int = 0
+    token_count: int = 0
+    lemma_count: int = 0
+    types_count: int = 0
+    for line in texts:
+        point_count += line.text.count('.')
+        comma_count += line.text.count(',')
+        tokens: List[str] = [token.text for token in line]
+        token_count += len(tokens)
+        lemma_count += len(set([token.lemma_ for token in line]))
+        types_count += len(set(tokens))
+    
+    ratios['comma-point'] = comma_count / point_count
+    ratios['token-lemma'] = token_count / lemma_count
+    ratios['token-types'] = token_count / types_count
+
+    return ratios
+
+
+def do_morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]) -> Tuple[Dict[str, float], Dict[str, float]]:
     """This function analysis the human and machine test data"""
     human_tokens, human_lemmas = tokenize_and_lemmatize(human_texts)
     machine_tokens, machine_lemmas = tokenize_and_lemmatize(machine_texts)
 
-    # Average number of tokens and lemmas per line for both the machine and human data
-    print(f'Average tokens per line for the human data: {round(len(human_tokens) / len(human_texts), 1)}')
-    print(f'Average tokens per line for the machine data: {round(len(machine_tokens) / len(machine_texts), 1)}')
-    print(f'Average lemmas per line for the human data: {round(len(human_lemmas) / len(human_texts), 1)}')
-    print(f'Average lemmas per line for the machine data: {round(len(machine_lemmas) / len(machine_texts), 1)}\n')
+    if DEBUG:
+        # Average number of tokens and lemmas per line for both the machine and human data
+        print(f'Average tokens per line for the human data: {round(len(human_tokens) / len(human_texts), 1)}')
+        print(f'Average tokens per line for the machine data: {round(len(machine_tokens) / len(machine_texts), 1)}')
+        print(f'Average lemmas per line for the human data: {round(len(human_lemmas) / len(human_texts), 1)}')
+        print(f'Average lemmas per line for the machine data: {round(len(machine_lemmas) / len(machine_texts), 1)}\n')
+        print(f'Average types per line for the human data: {round(len(set(human_tokens)) / len(human_texts), 1)}')
+        print(f'Average types per line for the machine data: {round(len(set(machine_tokens)) / len(machine_texts), 1)}')
+        print(f'Average lemma types per line for the human data: {round(len(set(human_lemmas)) / len(human_texts), 1)}')
+        print(f'Average lemma types per line for the machine data: {round(len(set(machine_lemmas)) / len(machine_texts), 1)}\n')
 
-    # Looking at the frequency of tokens
-    human_tokens_count = Counter(human_tokens)
-    machine_tokens_count = Counter(machine_tokens)
-    print("Human:")
-    for item in human_tokens_count.most_common(10):
-        print(item)
-    print("\nMachine:")
-    for item in machine_tokens_count.most_common(10):
-        print(item)
+        # Looking at the frequency of tokens
+        human_tokens_count = Counter(human_tokens)
+        machine_tokens_count = Counter(machine_tokens)
+        print("Human:")
+        for item in human_tokens_count.most_common(10):
+            print(item)
+        print("\nMachine:")
+        for item in machine_tokens_count.most_common(10):
+            print(item)
 
-    # Calculation comma/point ratio for human data
-    total_point_count = 0
-    total_comma_count = 0
-    human_accuracy_counter = 0
-    for line in human_texts:
-        point_count = line.text.count('.')
-        comma_count = line.text.count(',')
-        total_point_count += point_count
-        total_comma_count += comma_count
-        if point_count > 0:
-            if comma_count / point_count > 0.815:
-                human_accuracy_counter += 1
-    human_accuracy = human_accuracy_counter / len(human_texts)
-    print(f"\nComma/point ratio human data {(total_comma_count/total_point_count):.2f}")
-    print(f"Human accuracy: {human_accuracy:.2f}")
+    
+    human_ratios = calculate_ratios(human_texts)
+    machine_ratios = calculate_ratios(machine_texts)
 
-    # Calculation comma/point ratio for machine data
-    total_point_count = 0
-    total_comma_count = 0
-    machine_accuracy_counter = 0
-    for line in machine_texts:
-        point_count = line.text.count('.')
-        comma_count = line.text.count(',')
-        total_point_count += point_count
-        total_comma_count += comma_count
-        if point_count > 0:
-            if comma_count / point_count < 0.815:
-                machine_accuracy_counter += 1
-    machine_accuracy = machine_accuracy_counter / len(machine_texts)
-    print(f"\nComma/point ratio machine data {(total_comma_count/total_point_count):.2f}")
-    print(f"Machine accuracy: {machine_accuracy:.2f}")
+    if DEBUG:
+        print(f'Human data ratios: ')
+        for key, value in human_ratios.items():
+            print(f'{key}: {value}')
+        print(f'Machine data ratios:')
+        for key, value in machine_ratios.items():
+            print(f'{key}: {value}')
 
-def morphology_results(prompt_file: Path) -> List[str]:
+    return human_ratios, machine_ratios
+
+
+def get_morphology_results(prompts: List[Dict[str, str | Doc]], ratios: Tuple[Dict[str, float], Dict[str, float]]) -> List[str]:
     """This function predicts if each line in the input file is written by a human or a machine."""
     # Parse the prompt data
-    prompt_data = parse_promt_data(prompt_file)
-    texts = [entry['text'] for entry in prompt_data]
-    
-    # Calculate the average comma/point ratio for the entire data
-    total_point_count = 0
-    total_comma_count = 0
-    for line in texts:
-        total_point_count += line.text.count('.')
-        total_comma_count += line.text.count(',')
-    
-    if total_point_count == 0:
-        average_ratio = 0  # Avoid division by zero
-    else:
-        average_ratio = total_comma_count / total_point_count
-    
+    texts: List[Doc] = [entry['text'] for entry in prompts] # type: ignore
+
+    human_ratios, machine_ratios = ratios
+    comma_point = human_ratios['comma-point'] - machine_ratios['comma-point']
+    token_lemma = human_ratios['token-lemma'] - machine_ratios['token-lemma']
+    token_types = human_ratios['token-types'] - machine_ratios['token-types']
+
     # Initialize the results list
-    results = []
+    results: List[str] = []
     
     # Analyze each line using the calculated average ratio as threshold
     for line in texts:
-        point_count = line.text.count('.')
-        comma_count = line.text.count(',')
-        
-        if point_count > 0:
-            ratio = comma_count / point_count
-            if ratio > average_ratio:
-                results.append("Human")
-            else:
-                results.append("AI")
+        result: List[str] = []
+
+        comma_point_ratio = line.text.count(',') / (line.text.count('.') + 0.0001)
+        tokens = [token.text for token in line]
+        token_lemma_ratio = len(tokens) / len(set([token.lemma_ for token in line]))
+        token_types_ratio = len(tokens) / len(set(tokens))
+
+        if comma_point_ratio > human_ratios['comma-point'] - (comma_point / 2):
+            result.append('Human')
         else:
-            # If there are no points, we can't calculate the ratio. Default to "Human"
-            results.append("Human")
-    
+            result.append('AI')
+
+        if token_lemma_ratio > human_ratios['token-lemma'] - (token_lemma / 2):
+            result.append('Human')
+        else:
+            result.append('AI')
+        
+        if token_types_ratio > human_ratios['token-types'] - (token_types / 2):
+            result.append('Human')
+        else:
+            result.append('AI')
+
+        print(result)
+        results.append(max(set(result), key=result.count))
+
     return results
 
 def main():
     # Load the test data
-    #human_data: Path = Path('human.jsonl')
-    #machine_data: Path = Path('group1.jsonl')
-
-    human_data_path: Path = Path('human_sample.jsonl')
+    human_data_path: Path = Path('human.jsonl')
     machine_data_path: Path = Path('group1.jsonl')
 
-    # Perform morphology analysis on the human and machine data
-    print(morphology_results(human_data_path))
-    #morphology_results(machine_data_path)
-
     # Process the data
-    #human_texts, machine_texts = get_and_parse_texts(human_data, machine_data)
+    human_data, machine_data = get_and_parse_texts(human_data_path, machine_data_path)
 
-    # Perform the analysis on the test data
-    #morpology_analysis(human_texts, machine_texts)
+    # Perform morphology analysis on the human and machine data
+    separation = do_morpology_analysis(human_data, machine_data)
+
+    # Load the prompt data
+    prompt_path: Path = Path('group1_sample.jsonl')
+    prompt_data = parse_promt_data(prompt_path)
+
+    # Predict if each line in the prompt data is written by a human or a machine
+    results = get_morphology_results(prompt_data, separation)
+    print(results)
+
+    # Print the classification report with sklearn
+    true_labels: List[str] = [prompt['by'] for prompt in prompt_data] # type: ignore
+    print(classification_report(true_labels, results))
+
+    # Print the confusion matrix with sklearn
+    matrix = confusion_matrix(true_labels, results)
+    print('confusion matrix:\n', matrix)
+
 
 if __name__ == '__main__':
     main()
