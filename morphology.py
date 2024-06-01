@@ -4,7 +4,7 @@
 
 from spacy.tokens import Doc
 from collections import Counter
-from preprocessor import parse_promt_data, get_and_parse_texts, Path
+from preprocessor import parse_prompt_data, get_and_parse_texts, Path
 from typing import List, Tuple, Dict
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -149,7 +149,7 @@ def main():
 
     # Load the prompt data
     prompt_path: Path = Path('group1_sample.jsonl')
-    prompt_data = parse_promt_data(prompt_path)
+    prompt_data = parse_prompt_data(prompt_path)
 
     # Predict if each line in the prompt data is written by a human or a machine
     results = get_morphology_results(prompt_data, separation)
