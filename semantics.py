@@ -19,23 +19,13 @@ def perform_analysis(texts):
     amount_of_synsets = 0
     amount_of_verbs = 0
     for doc in texts:
-        for sent in doc.sents:
-            amount_of_sentences += 1
-            
-        for ent in doc.ents:
-            amount_of_NEs += 1
-            
-        for cluster in doc._.coref_clusters:
-            total_coref_amount += 1
-            for reference in cluster:
-                total_reference_amount += 1
-
-        for word in doc:
-            if word.pos_ == "VERB":
-                amount_of_verbs += 1
-                lemma = word.lemma_
-                synsets = wn.synsets(lemma, pos=wn.VERB)
-                amount_of_synsets += len(synsets)
+        coref_amount, reference_amount, sentence_amount, NE_amount, verb_amount, synset_amount = perform_analysis_single(doc)
+        amount_of_sentences += sentence_amount
+        amount_of_NEs += NE_amount
+        total_coref_amount += coref_amount
+        total_reference_amount += reference_amount
+        amount_of_verbs += verb_amount
+        amount_of_synsets += synset_amount
 
     references_per_cluster = total_reference_amount / total_coref_amount
     average_NE_sentence = amount_of_NEs / amount_of_sentences
@@ -52,7 +42,7 @@ def perform_analysis_single(doc):
     sentence_amount = 0
     synset_amount = 0
     verb_amount = 0
-    
+
     for sentence in doc.sents:
         sentence_amount += 1
 
@@ -63,7 +53,7 @@ def perform_analysis_single(doc):
         coref_amount += 1
         for reference in cluster:
             reference_amount += 1
-    
+
     for word in doc:
         if word.pos_ == "VERB":
             verb_amount += 1
@@ -76,13 +66,13 @@ def perform_analysis_single(doc):
 
 def do_semantic_analysis(human_texts, machine_texts):
 
-    machine_reference_amount, machine_NE_sentence, machine_synsets_verb = perform_analysis(machine_texts)    
+    machine_reference_amount, machine_NE_sentence, machine_synsets_verb = perform_analysis(machine_texts)
     human_reference_amount, human_NE_sentence, human_synsets_verb = perform_analysis(human_texts)
 
     separator_value_NE_sentence = (machine_NE_sentence + human_NE_sentence) / 2
     separator_value_references = (machine_reference_amount + human_reference_amount) / 2
     separator_value_synsets_verb = (machine_synsets_verb + human_synsets_verb) / 2
-    
+
     return separator_value_NE_sentence, separator_value_references, separator_value_synsets_verb
 
 
@@ -102,17 +92,17 @@ def get_semantic_results(separator_NE_sentence, separator_references, separator_
     answers = []
     for prompt in prompts:
         coref_current, references_current, sentences_current, NE_current, verbs_current, synsets_current = perform_analysis_single(prompt['text'])
-        
+
         if human_or_ai(coref_current, references_current, separator_references) == "Human":
             human_counter +=1
         else:
             ai_counter += 1
-            
+
         if human_or_ai(sentences_current, NE_current, separator_NE_sentence) == "Human":
             human_counter +=1
         else:
             ai_counter += 1
-            
+
         if human_or_ai(verbs_current, synsets_current, separator_synsets_verb) == "Human":
             human_counter +=1
         else:
