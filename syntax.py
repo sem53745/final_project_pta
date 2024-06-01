@@ -6,7 +6,7 @@
 # Mervyn #
 
 # import preprocessor
-from preprocessor import get_and_parse_texts, Path, parse_promt_data
+from preprocessor import get_and_parse_texts, Path, parse_prompt_data
 
 # import other necessary packages
 from sklearn.metrics import classification_report, confusion_matrix
@@ -45,7 +45,7 @@ def get_ratio_dict(data: list) -> dict:
             # for single text and not entire files
             if key not in tag_dict.keys():
                 tag_dict[key] = [ratio]
-            
+
             # for calculating the average of all texts inside the human_text and machine_text
             # used as the measure ratio
             else:
@@ -76,7 +76,7 @@ def calculate_average_ratios(combined_ratios: dict) -> dict:
     for key, value in combined_ratios.items():
         ratio = calculate_average_ratio(value)
         average_ratio_dict[key] = ratio
-    
+
     return average_ratio_dict
 
 
@@ -97,11 +97,11 @@ def calculate_measure_ratios(human_average_ratio : dict, machine_average_ratio: 
         if key in machine_average_ratio.keys():
             average_ratio = (value + machine_average_ratio[key]) / 2
             measure_ratios_dict[key] = average_ratio
-    
+
     return measure_ratios_dict
 
 
-def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, machine_average_ratios: dict, unknown_average_ratios: dict) -> str:
+def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, machine_average_ratios: dict, unknown_average_ratios: dict) -> tuple[str, float]:
     '''
     Function that takes the human/machine/measure ratios plus the unknown text's ratios and decides if the text is written by human or ai
     param measure_ratios: dict with tags and the 'golden standard' ratios to test the new data on
@@ -149,10 +149,12 @@ def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, mach
 
     # return human or machine according to the counters
     if human_counter > machine_counter:
-        return 'Human'
+        return ('Human', 1.0)
+    elif human_counter < machine_counter:
+        return ('AI', 1.0)
     else:
-        return 'AI'
-    
+        return ('Unsure', 0.0)
+
 
 def do_syntactic_analysis(human_text: list, machine_text: list) -> Tuple[dict, dict, dict]:
     '''
@@ -162,7 +164,7 @@ def do_syntactic_analysis(human_text: list, machine_text: list) -> Tuple[dict, d
     dictionary key: tag as a string
     dictionary value: average ratio as a float
     '''
-    
+
     # get all ratios for human and machine
     human_ratios = get_ratio_dict(human_text)
     machine_ratios = get_ratio_dict(machine_text)
@@ -178,7 +180,7 @@ def do_syntactic_analysis(human_text: list, machine_text: list) -> Tuple[dict, d
 
 
 def write_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> None:
-    
+
     measure_ratios, human_average_ratios, machine_average_ratios = ratios
     answers: list[str] = []
 
@@ -190,10 +192,10 @@ def write_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[
         print(f'text{id:0>3}: predicted: {answer:10} actual: {text["by"]}')
 
 
-def get_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> list[str]:
-    
+def get_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> list[tuple[str, float]]:
+
     measure_ratios, human_average_ratios, machine_average_ratios = ratios
-    answers: list[str] = []
+    answers: list[tuple[str, float]] = []
 
     for text in prompts:
         unknown_ratios = get_ratio_dict([text['text']])
@@ -213,7 +215,7 @@ def main():
     all_ratios = do_syntactic_analysis(human_text, machine_text)
 
     # get results for new text
-    prompts = parse_promt_data(Path('prompts.jsonl'))
+    prompts = parse_prompt_data(Path('prompts.jsonl'))
     true_list: list[str] = [text['by'] for text in prompts] # type: ignore
     pred_list = get_syntactic_results(all_ratios, prompts)
 

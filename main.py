@@ -5,9 +5,9 @@
 # Jasper #
 
 # import our modules
-from preprocessor import get_and_parse_texts, parse_promt_data, Path
+from preprocessor import get_and_parse_texts, parse_prompt_data, Path
 from pragmatics import do_sentiment_analysis, get_sentiment_results
-#from morphology import do_morpological_analysis, get_morpology_results
+from morphology import get_morphology_results
 from syntax import do_syntactic_analysis, get_syntactic_results
 from semantics import do_semantic_analysis, get_semantic_results
 
@@ -17,26 +17,32 @@ import os
 from collections import Counter
 from sklearn.metrics import classification_report, confusion_matrix
 from spacy.tokens import Doc
-from typing import NewType, Tuple, List
+from typing import NewType, Tuple, List, Literal
 Error = NewType('Error', str)
 
 
-def create_final_prediction(*results: List[str], true_labels: List[str]) -> None:
+def create_final_prediction(*results: List[Tuple[Literal['Human', 'Unsure', 'AI'], float]], true_labels: List[str]) -> None:
     '''
     Function to create the final prediction of the results
     param results: List[str], the results of the different analysis
     '''
 
-    transposed_results: List[List[str]] = [[results[j][i] for j in range(len(results))] for i in range(len(results[0]))]
+    transposed_results = [[results[j][i] for j in range(len(results))] for i in range(len(results[0]))]
 
     predictions: List[str] = []
     for idx, text_predictions in enumerate(transposed_results):
+        text_predictions = [result for result in text_predictions if result[0] in ['AI', 'Human'] and result[1] > 0.5]
+        text_predictions, certanties = zip(*text_predictions)
+
         human = -(text_predictions.count('Human') * 0.99)
         machine = (text_predictions.count('AI') * 1.01)
         prediction = human + machine
+        print(certanties)
+        prediction_certainty = sum(certanties) / len(certanties)
+
         prediction_str = 'Human' if prediction < 0 else 'AI'
         predictions.append(prediction_str)
-        print(f'The final prediction is: {prediction_str} because it scored: {prediction:.3f}')
+        print(f'The final prediction is: {prediction_str} because it scored: {prediction:.3f}, with a certainty of: {prediction_certainty:.3f}')
         print (f'The true label is: {true_labels[idx]}\n')
 
     print('The final classification report is: \n')
@@ -187,12 +193,11 @@ def main():
     check_file(prompt_path)
 
     # load the data from the jsonl files
-    prompts = parse_promt_data(prompt_path)
+    prompts = parse_prompt_data(prompt_path)
     true_labels: List[str] = [prompt['by'] for prompt in prompts] # type: ignore
 
     # for the morphological analysis
-    #something = do_morpological_analysis(human, machine)
-    #morpology_prediction = get_morpology_results(something, prompts)
+    morpology_prediction = get_morphology_results(prompts)
     #make_report(true_labels, morpology_prediction, 'morpological')
 
     # for the syntactic analysis
@@ -212,7 +217,7 @@ def main():
     #make_report(true_labels, sentiment_prediction, 'pragmatic')
 
     # create the final prediction
-    create_final_prediction(syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
+    create_final_prediction(morpology_prediction, syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
 
 
 if __name__ == '__main__':
