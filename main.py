@@ -37,7 +37,6 @@ def create_final_prediction(*results: List[Tuple[Literal['Human', 'Unsure', 'AI'
         human = -(text_predictions.count('Human') * 0.99)
         machine = (text_predictions.count('AI') * 1.01)
         prediction = human + machine
-        print(certanties)
         prediction_certainty = sum(certanties) / len(certanties)
 
         prediction_str = 'Human' if prediction < 0 else 'AI'
