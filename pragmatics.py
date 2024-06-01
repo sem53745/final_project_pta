@@ -66,13 +66,7 @@ def write_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data
 
     # get the data
     true_list: List[str] = [prompt['by'] for prompt in prompts] # type: ignore
-    pred_list: List[str] = []
-    for prompt in prompts:
-        chance = pragmatic_predictor(prompt['text'], comparison_data) # type: ignore
-        if chance > 0.0:
-            pred_list.append('AI')
-        else:
-            pred_list.append('Human')
+    pred_list: List[str] = get_sentiment_results(prompts, comparison_data)
 
     # print the classification report with sklearn
     print(classification_report(true_list, pred_list))
@@ -121,7 +115,7 @@ def do_sentiment_analysis(data: List[Doc]) -> Tuple[Tuple[float, float, float], 
 
 
 def main():
-    
+
     # get the data
     human, machine = get_and_parse_texts(Path('human.jsonl'), Path('group1.jsonl'))
     print('\n')
