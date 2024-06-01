@@ -3,14 +3,15 @@
 # Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
 
 from preprocessor import get_and_parse_texts, Path, parse_promt_data
-import spacy
+from typing import Tuple, List, Dict, NewType
+from spacy.tokens import Doc
 from fastcoref import spacy_component
 from collections import Counter
 from nltk.corpus import wordnet as wn
 import nltk
 
 
-def perform_analysis(texts):
+def perform_analysis(texts: List[Doc]):
 
     total_reference_amount = 0
     total_coref_amount = 0
@@ -18,6 +19,7 @@ def perform_analysis(texts):
     amount_of_NEs = 0
     amount_of_synsets = 0
     amount_of_verbs = 0
+
     for doc in texts:
         coref_amount, reference_amount, sentence_amount, NE_amount, verb_amount, synset_amount = perform_analysis_single(doc)
         amount_of_sentences += sentence_amount
@@ -34,7 +36,7 @@ def perform_analysis(texts):
     return references_per_cluster, average_NE_sentence, synsets_per_verb
 
 
-def perform_analysis_single(doc):
+def perform_analysis_single(doc:Doc):
 
     coref_amount = 0
     reference_amount = 0
@@ -64,7 +66,7 @@ def perform_analysis_single(doc):
     return coref_amount, reference_amount, sentence_amount, NE_amount, verb_amount, synset_amount
 
 
-def do_semantic_analysis(human_texts, machine_texts):
+def do_semantic_analysis(human_texts: List[Doc], machine_texts: List[Doc]):
 
     machine_reference_amount, machine_NE_sentence, machine_synsets_verb = perform_analysis(machine_texts)
     human_reference_amount, human_NE_sentence, human_synsets_verb = perform_analysis(human_texts)
@@ -76,16 +78,16 @@ def do_semantic_analysis(human_texts, machine_texts):
     return separator_value_NE_sentence, separator_value_references, separator_value_synsets_verb
 
 
-def human_or_ai(value_to_divide_by, value_to_divide, separator):
+def human_or_ai(value_to_divide_by:int, value_to_divide:int, separator:float):
 
     if value_to_divide_by != 0:
-        if (value_to_divide / value_to_divide_by) > separator:
+        if (value_to_divide / value_to_divide_by) >= separator:
             return "Human"
-        elif (value_to_divide / value_to_divide_by) < separator:
+        else:
             return "AI"
 
 
-def get_semantic_results(separator_NE_sentence, separator_references, separator_synsets_verb, prompts):
+def get_semantic_results(separator_NE_sentence:float, separator_references:float, separator_synsets_verb:float, prompts: List[Dict[str, Doc | str]]):
 
     human_counter = 0
     ai_counter = 0
