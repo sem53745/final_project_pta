@@ -62,7 +62,7 @@ def do_semantic_analysis(human_texts: List[Doc], machine_texts: List[Doc]):
     separator_value_references = (machine_reference_amount + human_reference_amount) / 2
     separator_value_synsets_verb = (machine_synsets_verb + human_synsets_verb) / 2
 
-    return separator_value_NE_sentence, separator_value_references, separator_value_synsets_verb
+    return (separator_value_NE_sentence, separator_value_references, separator_value_synsets_verb)
 
 
 def human_or_ai(value_to_divide_by:int, value_to_divide:int, separator:float):
@@ -74,20 +74,21 @@ def human_or_ai(value_to_divide_by:int, value_to_divide:int, separator:float):
             return "AI"
 
 
-def get_semantic_results(separator_NE_sentence:float, separator_references:float, separator_synsets_verb:float, prompts: List[Dict[str, Doc | str]]):
+def get_semantic_results(seperators:tuple[float, float, float], prompts: List[Dict[str, Doc | str]]):
 
     human_counter = 0
     ai_counter = 0
+    separator_NE_sentence, separator_references, separator_synsets_verb = seperators
     answers = []
     for prompt in prompts:
         coref_current, references_current, sentences_current, NE_current, verbs_current, synsets_current = perform_analysis_single(prompt['text'])
 
-        if human_or_ai(coref_current, references_current, separator_references) == "Human":
+        if human_or_ai(sentences_current, NE_current, separator_NE_sentence) == "Human":
             human_counter +=1
         else:
             ai_counter += 1
 
-        if human_or_ai(sentences_current, NE_current, separator_NE_sentence) == "Human":
+        if human_or_ai(coref_current, references_current, separator_references) == "Human":
             human_counter +=1
         else:
             ai_counter += 1

@@ -9,7 +9,7 @@ from preprocessor import get_and_parse_texts, parse_promt_data, Path
 from pragmatics import do_sentiment_analysis, get_sentiment_results
 #from morphology import do_morpological_analysis, get_morpology_results
 from syntax import do_syntactic_analysis, get_syntactic_results
-#from semantics import do_semantic_analysis, get_semantic_results
+from semantics import do_semantic_analysis, get_semantic_results
 
 # import the supporting packages
 import argparse
@@ -31,9 +31,9 @@ def create_final_prediction(*results: List[str], true_labels: List[str]) -> None
 
     predictions: List[str] = []
     for idx, text_predictions in enumerate(transposed_results):
-        human: float = -(text_predictions.count('Human') * 0.99)
-        machine: float = (text_predictions.count('AI') * 1.01)
-        prediction: float = human + machine
+        human = -(text_predictions.count('Human') * 0.99)
+        machine = (text_predictions.count('AI') * 1.01)
+        prediction = human + machine
         prediction_str = 'Human' if prediction < 0 else 'AI'
         predictions.append(prediction_str)
         print(f'The final prediction is: {prediction_str} because it scored: {prediction:.3f}')
@@ -43,7 +43,7 @@ def create_final_prediction(*results: List[str], true_labels: List[str]) -> None
     print(classification_report(true_labels, predictions, labels=['AI', 'Human'], zero_division=0))
     matrix = confusion_matrix(true_labels, predictions, labels=['AI', 'Human'])
     print('the confusion matrix is: \n', matrix)
-    
+
 
 
 
@@ -65,7 +65,7 @@ def create_parser():
     '''
     Create the parser for the command line arguments
     There are 2 required arguments on the command line:
-    1. The path to the human data 
+    1. The path to the human data
     2. The path to the machine data
     '''
     parser = argparse.ArgumentParser(description='detection of AI generated text using NLP techniques')
@@ -86,7 +86,7 @@ def check_file(data_path: Path) -> None | Error:
         raise FileNotFoundError(f'{data_path} does not exist')
     if not data_path.endswith('.jsonl'):
         raise ValueError(f'{data_path}, File must be a .jsonl file')
-    
+
 
 def test_data(data: Doc) -> None | Error:
     '''
@@ -97,7 +97,7 @@ def test_data(data: Doc) -> None | Error:
     # test if the data exists
     if not data:
         raise ValueError('No human data found')
-    
+
     # test the basic spacy token functions
     for token in data:
         if not token:
@@ -111,7 +111,7 @@ def test_data(data: Doc) -> None | Error:
         if not token.dep_:
             raise ValueError('No dependencies found')
         break
-        
+
     for chunk in data.noun_chunks:
         if not chunk:
             raise ValueError('No noun chunks found')
@@ -148,7 +148,7 @@ def test_data(data: Doc) -> None | Error:
         if not cluster[0][1]:
             raise ValueError('No end index found')
         break
-    
+
     if not data._.blob.polarity:
         raise ValueError('No polarity found')
     if not data._.blob.subjectivity:
@@ -176,7 +176,7 @@ def main():
 
         test_data(human[0])
         print('All required spaCy-attributes are set')
-    
+
     else:
         human, machine = get_and_parse_texts(Path('human.jsonl'), Path('group1.jsonl'))
         print('Data is loaded')
@@ -193,7 +193,7 @@ def main():
     # for the morphological analysis
     #something = do_morpological_analysis(human, machine)
     #morpology_prediction = get_morpology_results(something, prompts)
-    #make_report(true_labels, semantic_prediction, 'morpological')
+    #make_report(true_labels, morpology_prediction, 'morpological')
 
     # for the syntactic analysis
     ratios = do_syntactic_analysis(human, machine)
@@ -201,8 +201,8 @@ def main():
     #make_report(true_labels, syntactic_prediction, 'syntactic')
 
     # for the semantic analysis
-    #something = do_semantic_analysis(human, machine)
-    #semantic_prediction = get_semantic_results(human, machine, prompts)
+    seperators = do_semantic_analysis(human, machine)
+    semantic_prediction = get_semantic_results(seperators, prompts)
     #make_report(true_labels, semantic_prediction, 'semantic')
 
     # for the pragmatic analysis
@@ -212,7 +212,7 @@ def main():
     #make_report(true_labels, sentiment_prediction, 'pragmatic')
 
     # create the final prediction
-    create_final_prediction(syntactic_prediction, sentiment_prediction, true_labels=true_labels)    
+    create_final_prediction(syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
 
 
 if __name__ == '__main__':
