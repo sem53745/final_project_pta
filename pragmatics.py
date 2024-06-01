@@ -50,12 +50,10 @@ def get_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: 
     pred_list: List[str] = []
     for prompt in prompts:
         chance = pragmatic_predictor(prompt['text'], comparison_data) # type: ignore
-        if chance == 2:
-            pred_list.append(('AI', 1.0))
-        elif chance == 1:
-            pred_list.append(('Unsure', 0))
+        if chance > 0.0:
+            pred_list.append('AI')
         else:
-            pred_list.append(('Human', 1.0))
+            pred_list.append('Human')
 
     return pred_list
 
