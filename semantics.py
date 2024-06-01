@@ -122,6 +122,9 @@ def get_semantic_results(seperators:tuple[float, float, float], prompts: List[Di
             #print(prompt['by'], end = ", ")
             #print("AI")
 
+        human_counter = 0
+        ai_counter = 0
+
 
 
     return answers
