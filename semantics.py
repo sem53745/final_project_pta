@@ -45,23 +45,10 @@ def perform_analysis_single(doc:Doc):
     synset_amount = 0
     verb_amount = 0
 
-    for sentence in doc.sents:
-        sentence_amount += 1
-
-    for ent in doc.ents:
-        NE_amount += 1
-
-    for cluster in doc._.coref_clusters:
-        coref_amount += 1
-        for reference in cluster:
-            reference_amount += 1
-
-    for word in doc:
-        if word.pos_ == "VERB":
-            verb_amount += 1
-            lemma = word.lemma_
-            synsets = wn.synsets(lemma, pos=wn.VERB)
-            synset_amount += len(synsets)
+    sentence_amount += len(list(doc.sents))
+    NE_amount += len(list(doc.ents))
+    coref_amount += len(list(doc._.coref_clusters))
+    synset_amount += len(list(wn.synsets(verb.lemma_, pos=wn.VERB)) for verb in doc if verb.pos_ == "VERB")
 
     return coref_amount, reference_amount, sentence_amount, NE_amount, verb_amount, synset_amount
 
