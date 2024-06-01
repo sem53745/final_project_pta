@@ -131,7 +131,6 @@ def get_morphology_results(prompts: List[Dict[str, str | Doc]], ratios: Tuple[Di
         else:
             result.append('AI')
 
-        print(result)
         results.append(max(set(result), key=result.count))
 
     return results
