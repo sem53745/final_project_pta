@@ -1,6 +1,8 @@
 # Program name: semantics.py
 # Date: 02/06
-# Contributors: Joris van Bruggen (s5723752),  Tieme Boerema (s5410762)
+# Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
+
+# Tieme, Joris #
 
 from preprocessor import get_and_parse_texts, Path, parse_prompt_data
 from typing import Tuple, List, Dict, Literal
@@ -167,3 +169,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+# Tieme,  Joris #
