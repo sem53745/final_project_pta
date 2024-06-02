@@ -108,6 +108,7 @@ def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, mach
     param human_average_ratios: dict with tags and human_text average ratios
     param machine_average_ratios: dict with tags and machine_text average ratios
     parma unknown_average_ratios: dict with tags and the unknown text's average ratios
+    return: string with 'Human' or 'AI' depending on the decision
     '''
 
     # initialize counters
@@ -149,11 +150,11 @@ def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, mach
 
     # return human or machine according to the counters
     if human_counter > machine_counter:
-        return ('Human', 1.0)
+        return 'Human'
     elif human_counter < machine_counter:
-        return ('AI', 1.0)
+        return 'AI'
     else:
-        return ('Unsure', 0.0)
+        return 'Unsure'
 
 
 def do_syntactic_analysis(human_text: list, machine_text: list) -> Tuple[dict, dict, dict]:
@@ -180,6 +181,11 @@ def do_syntactic_analysis(human_text: list, machine_text: list) -> Tuple[dict, d
 
 
 def write_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> None:
+    """
+    Writes the results of the syntactic analysis to the console.
+    :param ratios: Tuple containing the measure ratios, human average ratios and machine average ratios.
+    :param prompts: List of dictionaries containing the text and the author.
+    """
 
     measure_ratios, human_average_ratios, machine_average_ratios = ratios
     answers: list[str] = []
@@ -193,7 +199,12 @@ def write_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[
 
 
 def get_syntactic_results(ratios: Tuple[dict, dict, dict], prompts: List[dict[str, str | Doc]]) -> list[tuple[str, float]]:
-
+    """
+    Gets the results of the syntactic analysis.
+    :param ratios: Tuple containing the measure ratios, human average ratios and machine average ratios.
+    :param prompts: List of dictionaries containing the text and the author.
+    :return: List of tuples containing the predicted author.
+    """
     measure_ratios, human_average_ratios, machine_average_ratios = ratios
     answers: list[tuple[str, float]] = []
 

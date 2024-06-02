@@ -17,7 +17,7 @@ import os
 from collections import Counter
 from sklearn.metrics import classification_report, confusion_matrix
 from spacy.tokens import Doc
-from typing import NewType, Tuple, List, Literal
+from typing import NewType, Tuple, List
 Error = NewType('Error', str)
 
 
@@ -25,6 +25,7 @@ def create_final_prediction(*results: List[str], true_labels: List[str]) -> None
     '''
     Function to create the final prediction of the results
     param results: List[str], the results of the different analysis
+    param true_labels: List[str], the true labels of the data
     '''
 
     transposed_results = [[results[j][i] for j in range(len(results))] for i in range(len(results[0]))]
@@ -87,8 +88,7 @@ def create_parser():
 def check_file(data_path: Path) -> None | Error:
     '''
     Check if the given files exist and is of the correct type
-    param human: str, the path to the human data jsonl file
-    param machine: str, the path to the machine data jsonl file
+    param data_path: str, the path to the data jsonl file
     '''
     if not os.path.exists(data_path):
         raise FileNotFoundError(f'{data_path} does not exist')

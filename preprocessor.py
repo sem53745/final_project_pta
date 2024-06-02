@@ -48,6 +48,11 @@ except ImportError:
 
 # subfunction to load the jsonl files
 def load_jsonl(file_path: Path) -> List[Dict[str, str]]:
+    """
+    Loads a jsonl file
+    :param file_path: str, the path to the jsonl file
+    :return: list of dictionaries, with each dictionary being a line in the jsonl file
+    """
     with open(file_path, 'r') as file:
         data: List[Dict[str, str]] = [json.loads(line) for line in file]
     return data
@@ -55,6 +60,13 @@ def load_jsonl(file_path: Path) -> List[Dict[str, str]]:
 
 # subfunction to process the data with spacy
 def process_prompt_data(data: List[Dict[str, str]], nlp: Language, annotation: str | None = None) -> List[Dict[str, Doc | str]]:
+    """
+    Processes the prompt data with spacy
+    :param data: list of dictionaries, the data to process
+    :param nlp: spacy model, the spacy model to use for processing
+    :param annotation: str, the annotation for the data
+    :return: list of dictionaries, the processed data
+    """
     # Extract text data
     text_data: List[str] = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
     docs: List[Doc] = list(nlp.pipe(text_data))
@@ -68,6 +80,12 @@ def process_prompt_data(data: List[Dict[str, str]], nlp: Language, annotation: s
 
 
 def process_data(data: List[Dict[str, str]], nlp: Language) -> List[Doc]:
+    """
+    Process the data into spacy docs
+    :param data: list of dictionaries, the data to process
+    :param nlp: spacy model, the spacy model to use for processing
+    :return: list of spacy docs, the processed data
+    """
     # Extract text data
     text_data: List[str] = [entry['text'] for entry in data if 'text' in entry and entry['text'].strip()]
     docs: List[Doc] = list(nlp.pipe(text_data))
@@ -76,7 +94,10 @@ def process_data(data: List[Dict[str, str]], nlp: Language) -> List[Doc]:
 
 # subfunction to load the spacy model
 def load_spacy_model() -> Language:
-    # load the spacy model and add the necessary components
+    """
+    Loads the spacy model with all necessary components
+    :return: spacy model, the loaded spacy model
+    """
     nlp: Language = spacy.load("en_core_web_sm")
     nlp.add_pipe('spacytextblob')
     nlp.add_pipe('fastcoref')

@@ -14,7 +14,11 @@ DEBUG = False
 
 # Tokenization and Lemmatization
 def tokenize_and_lemmatize(texts: List[Doc]) -> Tuple[List[str], List[str]]:
-    """This function tokenizes the data"""
+    """
+    Tokenise and lemmatize the texts
+    :param texts: List[Doc], the texts to tokenize and lemmatize
+    """
+
     tokens: List[str] = []
     lemmas: List[str] = []
     for doc in texts:
@@ -28,7 +32,6 @@ def calculate_ratios(texts: List[Doc]) -> Dict[str, float]:
     This function calculates the ratios of the data
     it calculates the comma/point ratio, the token/lemma ratio and the token/types ratio
     param texts: List[Doc], the data to calculate the ratios of
-    param for_: str, the name of the data
     '''
     ratios: Dict[str, float] = {}
 
@@ -45,7 +48,7 @@ def calculate_ratios(texts: List[Doc]) -> Dict[str, float]:
         token_count += len(tokens)
         lemma_count += len(set([token.lemma_ for token in line]))
         types_count += len(set(tokens))
-    
+
     ratios['comma-point'] = comma_count / point_count
     ratios['token-lemma'] = token_count / lemma_count
     ratios['token-types'] = token_count / types_count
@@ -54,7 +57,11 @@ def calculate_ratios(texts: List[Doc]) -> Dict[str, float]:
 
 
 def do_morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]) -> Tuple[Dict[str, float], Dict[str, float]]:
-    """This function analysis the human and machine test data"""
+    """
+    Analyse the human and machine dataand calculates the ratios of the data
+    :param human_texts: List[Doc], the human data
+    :param machine_texts: List[Doc], the machine data
+    """
     human_tokens, human_lemmas = tokenize_and_lemmatize(human_texts)
     machine_tokens, machine_lemmas = tokenize_and_lemmatize(machine_texts)
 
@@ -79,7 +86,7 @@ def do_morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]) -> T
         for item in machine_tokens_count.most_common(10):
             print(item)
 
-    
+
     human_ratios = calculate_ratios(human_texts)
     machine_ratios = calculate_ratios(machine_texts)
 
@@ -95,7 +102,11 @@ def do_morpology_analysis(human_texts: List[Doc], machine_texts: List[Doc]) -> T
 
 
 def get_morphology_results(prompts: List[Dict[str, str | Doc]], ratios: Tuple[Dict[str, float], Dict[str, float]]) -> List[str]:
-    """This function predicts if each line in the input file is written by a human or a machine."""
+    """
+    Predicts if each line in the input file is written by a human or a machine.
+    :param prompts: List[Dict[str, str | Doc]], the data to predict
+    :param ratios: Tuple[Dict[str, float], Dict[str, float]], the ratios of the human and machine data
+    """
     # Parse the prompt data
     texts: List[Doc] = [entry['text'] for entry in prompts] # type: ignore
 
@@ -106,7 +117,7 @@ def get_morphology_results(prompts: List[Dict[str, str | Doc]], ratios: Tuple[Di
 
     # Initialize the results list
     results: List[str] = []
-    
+
     # Analyze each line using the calculated average ratio as threshold
     for line in texts:
         result: List[str] = []
@@ -125,7 +136,7 @@ def get_morphology_results(prompts: List[Dict[str, str | Doc]], ratios: Tuple[Di
             result.append('Human')
         else:
             result.append('AI')
-        
+
         if token_types_ratio > human_ratios['token-types'] - (token_types / 2):
             result.append('Human')
         else:

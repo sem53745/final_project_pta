@@ -16,7 +16,7 @@ DEBUG = False
 
 def pragmatic_predictor(text: Doc, comparison: Tuple[float, float, float, float]):
     '''
-    Function to predict the pragmatic score of the data
+    Predict the pragmatic score of the data
     param data: Doc, the text to predict the pragmatic score of
     param comparison: Tuple[float, float, float, float], the comparison values to use
     '''
@@ -41,7 +41,7 @@ def pragmatic_predictor(text: Doc, comparison: Tuple[float, float, float, float]
 
 def get_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: Tuple[float, float, float, float]) -> List[str]:
     '''
-    function to write the sentiment results
+    Write the sentiment results
     param prompts: List[Dict[str, Doc | str]], the data to check the sentiment of
     param comparison_data: Tuple[float, float, float, float], the "norm" values to use
     '''
@@ -59,7 +59,7 @@ def get_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: 
 
 def write_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data: Tuple[float, float, float, float]) -> None:
     '''
-    function to write the sentiment results
+    Write the sentiment results
     param prompts: List[Dict[str, Doc | str]], the data to check the sentiment of
     param comparison_data: Tuple[float, float, float, float], the "norm" values to use
     '''
@@ -78,7 +78,7 @@ def write_sentiment_results(prompts: List[Dict[str, Doc | str]], comparison_data
 
 def do_sentiment_analysis(data: List[Doc]) -> Tuple[Tuple[float, float, float], Tuple[float, float, float]]:
     '''
-    Function to check the sentiment of the data
+    Check the sentiment of the data
     param data: List[Doc], the data to check the sentiment of
     '''
     max_sentiment: float = 0.0
