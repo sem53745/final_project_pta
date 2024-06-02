@@ -2,8 +2,8 @@
 # Date: 01/06
 # Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
 
-from preprocessor import get_and_parse_texts, Path, parse_promt_data
-from typing import Tuple, List, Dict, NewType
+from preprocessor import get_and_parse_texts, Path, parse_prompt_data
+from typing import Tuple, List, Dict, Literal
 from spacy.tokens import Doc
 from fastcoref import spacy_component
 from collections import Counter
@@ -59,7 +59,7 @@ def perform_analysis_single(doc:Doc):
     coref_amount = len(list(doc._.coref_clusters))
     reference_amount = len(list(reference for cluster in doc._.coref_clusters for reference in cluster))
     verb_amount = len(list(word for word in doc if word.pos_ == "VERB"))
-    
+
     for word in doc:
         if word.pos_ == "VERB":
             lemma = word.lemma_
@@ -101,7 +101,7 @@ def human_or_ai(value_to_divide_by:int, value_to_divide:int, separator:float):
             return "AI"
 
 
-def get_semantic_results(separators:tuple[float, float, float], prompts: List[Dict[str, Doc | str]]):
+def get_semantic_results(separators:tuple[float, float, float], prompts: List[Dict[str, Doc | str]]) -> List[Tuple[Literal['Human', 'Unsure', 'AI'], float]]:
 
     human_counter = 0
     ai_counter = 0
@@ -125,20 +125,24 @@ def get_semantic_results(separators:tuple[float, float, float], prompts: List[Di
         else:
             ai_counter += 1
 
-        # The commented code within the next block of code can be uncommented in order to
-        # see the true labels of the texts, followed by the semantic classifiers labels.
+        max_score = 3
+        guessed = max(human_counter, ai_counter)
+        certainty = guessed / max_score
         if human_counter > ai_counter:
-            answers.append("Human")
-            print(prompt['by'], end = ", ")
-            print("Human")
+            answers.append(("Human", certainty))
+            #print(prompt['by'], end = ", ")
+            #print("Human")
         elif human_counter == ai_counter:
-            answers.append("Unsure")
-            print(prompt['by'], end = ", ")
-            print("Unsure")
+            answers.append(("Unsure", certainty))
+            #print(prompt['by'], end = ", ")
+            #print("Unsure")
         else:
-            answers.append("AI")
-            print(prompt['by'], end = ", ")
-            print("AI")
+            answers.append(("AI", certainty))
+            #print(prompt['by'], end = ", ")
+            #print("AI")
+
+        human_counter = 0
+        ai_counter = 0
 
     return answers
 
@@ -147,12 +151,12 @@ def main():
 
     # Load training data
     human_text, machine_text = get_and_parse_texts(Path('human.jsonl'), Path('group1.jsonl'))
-    
+
     # Compute the three separator values
     NE_sentence_separator, references_amount_separator, synsets_verb_separator = do_semantic_analysis(human_text, machine_text)
-    
+
     # Load test data.
-    prompts = parse_promt_data(Path('prompts.jsonl'))
+    prompts = parse_prompt_data(Path('prompts.jsonl'))
     
     # Compute results
     results = get_semantic_results((NE_sentence_separator, references_amount_separator, synsets_verb_separator), prompts)
