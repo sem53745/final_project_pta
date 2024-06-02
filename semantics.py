@@ -1,6 +1,6 @@
 # Program name: semantics.py
-# Date: 01/06
-# Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
+# Date: 02/06
+# Contributors: Joris van Bruggen (s5723752),  Tieme Boerema (s5410762)
 
 from preprocessor import get_and_parse_texts, Path, parse_prompt_data
 from typing import Tuple, List, Dict, Literal
@@ -102,12 +102,19 @@ def human_or_ai(value_to_divide_by:int, value_to_divide:int, separator:float):
 
 
 def get_semantic_results(separators:tuple[float, float, float], prompts: List[Dict[str, Doc | str]]) -> List[Tuple[Literal['Human', 'Unsure', 'AI'], float]]:
+    ''' This function takes as input a list of prompts (test data). These prompts are then
+       analyzed individually and compared to the patterns found in the training data.
+       The function then makes a decision of Human or AI based on the values found;
+       if two or more of the classification categories point in one direction, that label will be
+       assigned. In the end, the list of answers is returned, to be used by the main program
+       in order to assign a definitive label. '''
 
     human_counter = 0
     ai_counter = 0
     separator_NE_sentence, separator_references, separator_synsets_verb = separators
     answers = []
     for prompt in prompts:
+        # Retrieve required values for this prompt.
         coref_current, references_current, sentences_current, NE_current, verbs_current, synsets_current = perform_analysis_single(prompt['text'])
 
         if human_or_ai(sentences_current, NE_current, separator_NE_sentence) == "Human":
@@ -125,21 +132,17 @@ def get_semantic_results(separators:tuple[float, float, float], prompts: List[Di
         else:
             ai_counter += 1
 
+        # Here, certainty is calculated based on the amount of classification 
+        # categories that assigned the same label to the text.
         max_score = 3
         guessed = max(human_counter, ai_counter)
         certainty = guessed / max_score
         if human_counter > ai_counter:
             answers.append(("Human", certainty))
-            #print(prompt['by'], end = ", ")
-            #print("Human")
         elif human_counter == ai_counter:
             answers.append(("Unsure", certainty))
-            #print(prompt['by'], end = ", ")
-            #print("Unsure")
         else:
             answers.append(("AI", certainty))
-            #print(prompt['by'], end = ", ")
-            #print("AI")
 
         human_counter = 0
         ai_counter = 0
