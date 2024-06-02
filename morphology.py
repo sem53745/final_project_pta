@@ -1,6 +1,6 @@
 # Program name: morphology.py
 # Date: 03/06
-# Contributors: Jasper Kleine (s5152372), Sem Bartels (s5374588)
+# Contributors: Joris van Bruggen (s5723752), Mervyn Bolhuis (s5119103), Tieme Boerema (s5410762), Jasper Kleine (s5152372), Sem Bartels (s5374588)
 
 from spacy.tokens import Doc
 from collections import Counter
