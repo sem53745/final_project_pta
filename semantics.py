@@ -117,7 +117,7 @@ def get_semantic_results(separators:tuple[float, float, float], prompts: List[Di
     answers = []
     for prompt in prompts:
         # Retrieve required values for this prompt.
-        coref_current, references_current, sentences_current, NE_current, verbs_current, synsets_current = perform_analysis_single(prompt['text'])
+        coref_current, references_current, sentences_current, NE_current, verbs_current, synsets_current = perform_analysis_single(prompt['text']) # type: ignore
 
         if human_or_ai(sentences_current, NE_current, separator_NE_sentence) == "Human":
             human_counter +=1

@@ -21,31 +21,44 @@ from typing import NewType, Tuple, List
 Error = NewType('Error', str)
 
 
-def create_final_prediction(*results: List[str], true_labels: List[str]) -> None:
+def get_predicion(morph: str, syn: str, sam: str, prag: str) -> str:
+    score: float = 0.0
+    if morph == 'AI':
+        score += 0.66
+    elif morph == 'Human':
+        score -= 0.78
+
+    if syn == 'AI':
+        score += 0.97
+    elif syn == 'Human':
+        score -= 0.73
+
+    if sam == 'AI':
+        score += 0.59
+    elif sam == 'Human':
+        score -= 0.46
+
+    if prag == 'AI':
+        score += 0.98
+    elif prag == 'Human':
+        score -= 0.53
+
+    return 'AI' if score > 0.0 else 'Human'
+
+
+def create_final_predictions(*results: List[str], true_labels: List[str]) -> None:
     '''
     Function to create the final prediction of the results
     param results: List[str], the results of the different analysis
     param true_labels: List[str], the true labels of the data
     '''
 
-    transposed_results = [[results[j][i] for j in range(len(results))] for i in range(len(results[0]))]
-
     final_predictions: List[str] = []
-    for idx, text_predictions in enumerate(transposed_results):
-        predictions = [result if result in ['AI', 'Human'] else 'AI' for result in text_predictions]
-
-        human_count = predictions.count('Human')
-        ai_count = predictions.count('AI')
-
-        if ai_count >= human_count:
-            prediction: str = 'AI'
-            score: float = ai_count
-        else:
-            prediction = 'Human'
-            score: float = human_count
-
+    for idx in range(len(results[0])):
+        morph, syn, sam, prag = results[0][idx], results[1][idx], results[2][idx], results[3][idx]
+        prediction = get_predicion(morph, syn, sam, prag)
         final_predictions.append(prediction)
-        print(f'The final prediction is: {prediction} because it was predicted {score} times out of {len(predictions)}')
+        print(f'The final prediction is: {prediction}')
         print (f'The true label is: {true_labels[idx]}\n')
 
     print('The final classification report is: \n')
@@ -222,7 +235,7 @@ def main():
     #make_report(true_labels, sentiment_prediction, 'pragmatic')
 
     # create the final prediction
-    create_final_prediction(morphology_prediction, syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
+    create_final_predictions(morphology_prediction, syntactic_prediction, semantic_prediction, sentiment_prediction, true_labels=true_labels)
 
 
 if __name__ == '__main__':

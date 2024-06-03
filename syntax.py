@@ -151,7 +151,7 @@ def human_machine_decider(measure_ratios: dict, human_average_ratios: dict, mach
     # return human or machine according to the counters
     if human_counter > machine_counter:
         return 'Human'
-    elif human_counter < machine_counter:
+    elif human_counter <= machine_counter:
         return 'AI'
     else:
         return 'Unsure'

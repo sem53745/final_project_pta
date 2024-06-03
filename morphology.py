@@ -158,7 +158,7 @@ def main():
     separation = do_morpology_analysis(human_data, machine_data)
 
     # Load the prompt data
-    prompt_path: Path = Path('group1_sample.jsonl')
+    prompt_path: Path = Path('prompts.jsonl')
     prompt_data = parse_prompt_data(prompt_path)
 
     # Predict if each line in the prompt data is written by a human or a machine
